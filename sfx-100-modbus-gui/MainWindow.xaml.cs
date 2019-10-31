@@ -6,67 +6,53 @@ using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Xml;
 using System.Xml.Serialization;
 using Path = System.IO.Path;
 
 namespace sfx_100_modbus_gui
 {
-    public class ViewModel
-    {
-        public ObservableCollection<int> AvailableServoIDs { get; } = new ObservableCollection<int>
-        {
-            1,2,3,4
-        };
-    }
-
-    class Item
-    {
-        public string Name { get; set; }
-        public bool Selected { get; set; }
-    }
 
     /// <summary>
     /// Interaktionslogik für MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
+        /// <summary>
+        /// Dictionary containing available profiles in profile directory
+        /// </summary>
         private Dictionary<string, string> _profileFilesAvailable;
-        private ModBusWrapper _modBusWrapper = new ModBusWrapper();
-        public List<int> AvailableServoIDs = new List<int>();
 
+        /// <summary>
+        /// Holds the ModBusWrapper instance
+        /// </summary>
+        private ModBusWrapper _modBusWrapper = new ModBusWrapper();
+
+        /// <summary>
+        /// Holds the available servo Ids
+        /// </summary>
+        public ObservableCollection<int> AvailableServoIDs = new ObservableCollection<int>();
+
+        /// <summary>
+        /// Main Entry
+        /// </summary>
         public MainWindow()
         {
             InitializeComponent();
-            log("startup");
-            InitializeApp();
+            DataContext = this;
+            Log("startup");
+            LoadAvailableProfiles();
         }
 
-        private void InitializeApp()
-        {
-            loadAvailablePorts();
-            loadAvailableProfiles();
-
-            /*listBoxPrepareServos.Items.Clear();
-            listBoxPrepareServos.ItemsSource = AvailableServoIDs;*/
-        }
+        #region private methods
 
         /// <summary>
         /// Loads available xml based servo profiles from applications subdirectory (servo-profiles)
         /// </summary>
-        private void loadAvailableProfiles()
+        private void LoadAvailableProfiles()
         {
-            log("loadAvailableProfiles");
+            Log("loadAvailableProfiles");
 
             var servoProfilesPath = Path.Combine(Directory.GetCurrentDirectory(), "servo-profiles");
             if (Directory.Exists(servoProfilesPath))
@@ -82,71 +68,132 @@ namespace sfx_100_modbus_gui
                     listServoProfiles.Items.Add(shortProfileName);
                 }
 
-                log("servo-profile path and files loaded");
+                Log("servo-profile path and files loaded");
             }
             else
             {
-                log("servo-profile path not available - try to create path: " + servoProfilesPath);
+                Log("servo-profile path not available - try to create path: " + servoProfilesPath);
                 try
                 {
                     Directory.CreateDirectory(servoProfilesPath);
-                    log("servo-profile path created");
+                    Log("servo-profile path created");
                 }
                 catch (Exception ex)
                 {
-                    log("Error during creation of Servo profiles directory. " + ex.Message);
+                    Log("Error during creation of Servo profiles directory. " + ex.Message);
                 }
             }
 
         }
 
-        private void backupAsProfile(string servoID)
+        /// <summary>
+        /// Reads current parameters from servo and saves them to file 
+        /// </summary>
+        /// <param name="servoId">ID of servo</param>
+        private void BackupProfile(string servoId)
         {
-            log("backupAsProfile - servo ID: " + servoID);
-            var values = _modBusWrapper.ReadData(Convert.ToByte(servoID), 0, 280);
-            saveAsProfile(servoID, values, DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + servoID + "-backup");
+            Log("backupProfile - servo ID: " + servoId);
+            var values = _modBusWrapper.ReadData(Convert.ToByte(servoId), 0, 280);
+            SaveProfile(servoId, values, DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + servoId + "-backup");
         }
 
-        private void saveAsProfile(string servoID, Dictionary<int,int> values, string ProfileName = "", string Author = "", string Info = "")
+        /// <summary>
+        /// Saves profile to profile folder
+        /// </summary>
+        /// <param name="servoId">ID of Servo from which the params are</param>
+        /// <param name="values">Values from ModBusWrapper</param>
+        /// <param name="profileName">Name of the profile to be saved</param>
+        /// <param name="author">Author of the profile</param>
+        /// <param name="version">Version of the profile</param>
+        /// <param name="info">Additional information of the profile</param>
+        private void SaveProfile(string servoId, Dictionary<int, int> values, string profileName = "", string author = "", string version = "", string info = "")
         {
             ServoConfigurationProfile tmpSet = new ServoConfigurationProfile();
 
+            tmpSet.Name = profileName;
             tmpSet.Created = DateTime.Now;
-            tmpSet.Author = Author;
-            tmpSet.Name = ProfileName;
-            tmpSet.Info = Info;
+            tmpSet.Author = author;
+            tmpSet.Version = version;
+            tmpSet.Info = info;
+            tmpSet.OriginServoId = servoId;
             tmpSet.Parameters = new List<Param>();
 
             foreach (var val in values)
             {
-                var tmpParam = new Param() {key = val.Key.ToString(), value = val.Value.ToString()};
+                var tmpParam = new Param() { Key = val.Key.ToString(), Value = val.Value.ToString() };
                 tmpSet.Parameters.Add(tmpParam);
             }
 
-            XmlSerializer xsSubmit = new XmlSerializer(typeof(ServoConfigurationProfile));
-            var xml = "";
+            XmlSerializer xmlProfileSerializer = new XmlSerializer(typeof(ServoConfigurationProfile));
 
-            using (var sww = new StringWriter())
+            using (var sww = new StringWriterWithEncoding(Encoding.UTF8))
             {
-                using (XmlTextWriter writer = new XmlTextWriter(sww) { Formatting = Formatting.Indented })
+                using (XmlTextWriter writer = new XmlTextWriter(sww) { Formatting = Formatting.Indented})
                 {
-                    xsSubmit.Serialize(writer, tmpSet);
-                    xml = sww.ToString(); // Your XML
+                    xmlProfileSerializer.Serialize(writer, tmpSet);
+                    var xml = sww.ToString();
 
-                    var profilePath = Path.Combine(Directory.GetCurrentDirectory(), "servo-profiles", ProfileName + ".xml");
+                    var profilePath = Path.Combine(Directory.GetCurrentDirectory(), "servo-profiles", profileName + ".xml");
                     File.WriteAllText(profilePath, xml);
-                    log("profile saved: " + profilePath);
+                    Log("profile saved: " + profilePath);
                 }
             }
-            
         }
 
-        private void loadAvailablePorts()
+        /// <summary>
+        /// Loads and returns a given profile 
+        /// </summary>
+        /// <param name="profilePath">path to profile to load</param>
+        /// <returns>profile</returns>
+        private ServoConfigurationProfile LoadProfile(string profilePath)
         {
-            // Handled in WPF
+            XmlSerializer xmlProfileSerializer = new XmlSerializer(typeof(ServoConfigurationProfile));
+            ServoConfigurationProfile profile;
+            using (var reader = new FileStream(profilePath, FileMode.Open))
+            {
+                profile = (ServoConfigurationProfile)xmlProfileSerializer.Deserialize(reader);
+            }
+            return profile;
         }
 
-        private void log(object logEntry)
+
+        /// <summary>
+        /// Transfers the given profile to the given Servos
+        /// </summary>
+        /// <param name="profilePath"></param>
+        /// <param name="servos">Array of Servos to which the profile will be transferred</param>
+        private void TransferProfile(string profilePath, Array servos)
+        {
+            Log("Transferring profile:  " + profilePath);
+            var profile = LoadProfile(profilePath);
+
+            foreach (var servoId in servos)
+            {
+                Log("Profile transferring to servo: " + servoId);
+                if (_modBusWrapper.WriteProfile(Convert.ToByte(servoId), profile))
+                {
+                    Log("Transfer to servo: " + servoId + " successful");
+                }
+                else
+                {
+                    Log("Error: transfer to servo: " + servoId + " failed");
+                }
+            }
+
+            Log("Profile transfer finished");
+            //throw new NotImplementedException();
+
+        }
+
+        #endregion
+
+        #region Private helpers
+
+        /// <summary>
+        /// Simple logging to window. Holds only limited entries to prevent scrolling
+        /// </summary>
+        /// <param name="logEntry">Object to log</param>
+        private void Log(object logEntry)
         {
             if (debugBox.Items.Count >= 36)
             {
@@ -158,9 +205,30 @@ namespace sfx_100_modbus_gui
             debugBox.ScrollIntoView(debugBox.SelectedItem);
         }
 
-        private void btnConnect(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Helper method. Repopulates the Servo IDs to the lists and boxes
+        /// </summary>
+        private void RePopulateLists()
         {
-            log("connect");
+            // Todo: WPF Binding instead of this
+            listBoxPrepareServos.ItemsSource = AvailableServoIDs;
+            listBoxProfileServos.ItemsSource = AvailableServoIDs;
+            cmbBoxBackupServo.ItemsSource = AvailableServoIDs;
+        }
+
+
+        #endregion
+
+        #region ButtonClicks
+
+        /// <summary>
+        /// Eventhandler for click on connect
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnConnect(object sender, RoutedEventArgs e)
+        {
+            Log("connect");
             ModBusConfiguration tmpConfig = new ModBusConfiguration
             {
                 // Todo: Maybe pass plain values here and take care of conversion in wrapper
@@ -170,59 +238,133 @@ namespace sfx_100_modbus_gui
                 StopBits = (StopBits) Enum.Parse(typeof(StopBits), comOptionsStopBit.Text),
                 Speed = Convert.ToInt32(comOptionsSpeed.Text)
             };
-            _modBusWrapper.Connect(tmpConfig);
-
-        }
-
-        private void btnDisconnect(object sender, RoutedEventArgs e)
-        {
-            log("disconnect");
-            _modBusWrapper.Disconnect();
-        }
-
-        private void btnSearchServos(object sender, RoutedEventArgs e)
-        {
-            log("search servos");
-            AvailableServoIDs = _modBusWrapper.SearchServos();
-        }
-
-        private void btnCheckDoubleIds(object sender, RoutedEventArgs e)
-        {
-            log("check for double servo IDs");
-        }
-
-        private void btnTransferProfile(object sender, RoutedEventArgs e)
-        {
-            if (listServoProfiles.SelectedValue != null)
+            if (_modBusWrapper.Connect(tmpConfig))
             {
-                log("transfer Profile: " + listServoProfiles.SelectedValue);
-                transferProfile(this._profileFilesAvailable[listServoProfiles.SelectedValue.ToString()]);
+                btnConnect.IsEnabled = false;
+                btnDisconnect.IsEnabled = true;
+                grpSearchForServos.IsEnabled = true;
+
+            }
+
+        }
+
+        /// <summary>
+        /// Eventhandler for click on disconnect
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnDisconnect(object sender, RoutedEventArgs e)
+        {
+            Log("disconnect");
+            if (_modBusWrapper.Disconnect())
+            { 
+                // Todo: Isnt it possible to observe the state and set the enabled state smarter?
+                btnConnect.IsEnabled = true;
+                btnDisconnect.IsEnabled = false;
+                grpSearchForServos.IsEnabled = false;
+                grpBackup.IsEnabled = false;
+                grpPrepare.IsEnabled = false;
+                grpTransfer.IsEnabled = false;
+
+            }
+        }
+
+        /// <summary>
+        /// Eventhandler for click on search servos
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnSearchServos(object sender, RoutedEventArgs e)
+        {
+            Log("search servos");
+            AvailableServoIDs = _modBusWrapper.SearchServos();
+            RePopulateLists();
+
+            if (AvailableServoIDs.Count > 0)
+            {
+                grpBackup.IsEnabled = true;
+                grpPrepare.IsEnabled = true;
+                grpTransfer.IsEnabled = true;
+
+                Log("Servos found: ");
+                foreach (var servo in AvailableServoIDs)
+                {
+                    Log("Servo Id: " + servo);
+                }
             }
             else
             {
-                log("error: no profile selected");
+                grpBackup.IsEnabled = false;
+                grpPrepare.IsEnabled = false;
+                grpTransfer.IsEnabled = false;
+
+                Log("No Servos found");
             }
         }
 
-        private void transferProfile(string profile)
+        /// <summary>
+        /// Eventhandler for click on check for double Ids
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnCheckDoubleIds(object sender, RoutedEventArgs e)
         {
-            //throw new NotImplementedException();
-
+            Log("check for double servo IDs");
         }
 
-        private void btnPrepareServos(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Eventhandler for click on backup profile
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnBackupAsProfile(object sender, RoutedEventArgs e)
         {
-            log("prepareServos");
+            BackupProfile(cmbBoxBackupServo.SelectedValue.ToString());
+            LoadAvailableProfiles();
         }
 
-        private void btnProfilesRefresh(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Eventhandler for click on prepare servos for simfeedback
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnPrepareServos(object sender, RoutedEventArgs e)
         {
-            loadAvailableProfiles();
+            //Todo: Fill with SFX-100 default values
+            Log("prepareServos");
         }
 
-        private void btnBackupAsProfile(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Eventhandler for click on profiles refresh
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnProfilesRefresh(object sender, RoutedEventArgs e)
         {
-            backupAsProfile(cmbBackUpServo.SelectedValue.ToString());
+            LoadAvailableProfiles();
         }
+
+        /// <summary>
+        /// Eventhandler for click on transfer profile
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnTransferProfile(object sender, RoutedEventArgs e)
+        {
+            if (listServoProfiles.SelectedValue != null)
+            {
+                Log("transfer Profile: " + listServoProfiles.SelectedValue);
+                Log("transfer to: " + listBoxProfileServos.SelectedItems);
+
+                Array servosArray = listBoxProfileServos.SelectedItems.Cast<int>().ToArray();
+                TransferProfile(_profileFilesAvailable[listServoProfiles.SelectedValue.ToString()], servosArray);
+            }
+            else
+            {
+                Log("Error: no profile selected");
+            }
+        }
+
+        #endregion
     }
 }

@@ -1,28 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO.Ports;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 using EasyModbus;
-using EasyModbus.Exceptions;
 
 namespace sfx_100_modbus_lib
 {
-
-    public class ModBusConfiguration
-    {
-        public string PortName;
-        public int DataBits;
-        public Parity Parity;
-        public StopBits StopBits;
-        public int Speed;
-    }
-
     public class ModBusWrapper
     {
+        /// <summary>
+        /// Instance of easymodbus client
+        /// </summary>
         private ModbusClient _modbusClient = new ModbusClient();
 
+        /// <summary>
+        /// Connects to the ModBus
+        /// </summary>
+        /// <param name="config">Connection Parameters</param>
+        /// <returns>True/False</returns>
         public bool Connect(ModBusConfiguration config)
         {
             _modbusClient.SerialPort = config.PortName;
@@ -35,13 +29,17 @@ namespace sfx_100_modbus_lib
                 _modbusClient.Connect();
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                throw ex;
-                return false;
+                Console.WriteLine(e);
+                throw;
             }
         }
 
+        /// <summary>
+        /// Disconnects from ModBus
+        /// </summary>
+        /// <returns>True/False</returns>
         public bool Disconnect()
         {
             if (_modbusClient.Connected)
@@ -51,25 +49,29 @@ namespace sfx_100_modbus_lib
                     _modbusClient.Disconnect();
                     return true;
                 }
-                catch (Exception ex)
+                catch (Exception e)
                 {
-                    throw ex;
-                    return false;
+                    Console.WriteLine(e);
+                    throw;
                 }
             }
             return false;
         }
 
-        public List<int> SearchServos()
+        /// <summary>
+        /// Searches for max 8 attached servos
+        /// </summary>
+        /// <returns>Observable int Collection of found servos</returns>
+        public ObservableCollection<int> SearchServos()
         {
-            List<int> foundServos = new List<int>();
-            for (int i = 1; i <= 4; i++)
+            ObservableCollection<int> foundServos = new ObservableCollection<int>();
+            for (int i = 1; i <= 1; i++)
             {
-                setServoId(i);
+                SetServoId(i);
                 try
                 {
-                    var speedResp = _modbusClient.ReadHoldingRegisters(65, 1);
-                    Console.WriteLine("Unit: " + i + " register: " + speedResp[0].ToString("D3"));
+                    var speedResp = ReadValueFromServo(65);
+                    Console.WriteLine("Unit: " + i + " register: " + speedResp.ToString("D3"));
                     foundServos.Add(i);
                 }
                 catch (Exception ex)
@@ -77,36 +79,73 @@ namespace sfx_100_modbus_lib
                     Console.WriteLine("No Servo found with identifier: " + i + " -- " + ex.Message);
                 }
             }
-
             return foundServos;
         }
 
-        public Dictionary<int, int> ReadData(byte servoID, int start, int end)
+        /// <summary>
+        /// Reads a single value from servo
+        /// </summary>
+        /// <param name="address">Address to read from i.e 65 for Pn0065</param>
+        /// <returns></returns>
+        private int ReadValueFromServo(int address)
+        {
+            return _modbusClient.ReadHoldingRegisters(address, 1)[0];
+        }
+
+        /// <summary>
+        /// Writes a complete servo parameter profile to the given servo
+        /// </summary>
+        /// <param name="servoId"></param>
+        /// <param name="profile"></param>
+        /// <returns></returns>
+        public bool WriteProfile(byte servoId, ServoConfigurationProfile profile)
+        {
+            try
+            {
+                foreach (var param in profile.Parameters)
+                {
+                    Console.WriteLine("writing: " + param.Key + " - " + param.Value);
+                    _modbusClient.WriteSingleRegister(Convert.ToInt32(param.Key), Convert.ToInt32(param.Value));
+                }
+
+                //Todo: Implement & Error handling
+                return true;
+            }
+            catch (Exception)
+            {
+                // Todo: Error handling
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Reads a complete servo parameter profile from the given servo
+        /// </summary>
+        /// <param name="servoId"></param>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <returns></returns>
+        public Dictionary<int, int> ReadData(byte servoId, int start, int end)
         {
             Dictionary<int,int> readValues = new Dictionary<int, int>();
-            setServoId(servoID);
+            SetServoId(servoId);
 
             for (int i = start; i <= end; i++)
             {
                 var tmpRes = _modbusClient.ReadHoldingRegisters(i, 1);
-                readValues.Add(i,tmpRes[0]);
+                readValues.Add(i, tmpRes[0]);
             }
 
             return readValues;
         }
 
-        private void setServoId(int servoId)
+        /// <summary>
+        /// Changes Servo Id
+        /// </summary>
+        /// <param name="servoId"></param>
+        public void SetServoId(int servoId)
         {
             _modbusClient.UnitIdentifier = Convert.ToByte(servoId);
         }
-
-        public void Test()
-        {
-
-            
-            var speedResp = _modbusClient.ReadHoldingRegisters(51, 1);
-            Console.WriteLine("register: " + speedResp[0].ToString("D3"));
-        }
-
     }
 }

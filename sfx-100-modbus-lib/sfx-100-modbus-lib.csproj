@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ModBusConfiguration.cs" />
     <Compile Include="ModBusWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServoConfigurationProfile.cs" />

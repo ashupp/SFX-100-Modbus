@@ -7,13 +7,13 @@
         xmlns:ports="clr-namespace:System.IO.Ports;assembly=System"
         xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
-        Title="SFX-100-modbus-gui" Height="852.402" Width="921.327" ResizeMode="CanMinimize">
+        Title="SFX-100-modbus-gui" Height="839.89" Width="921.327" ResizeMode="CanMinimize">
     <Window.Resources>
         <ObjectDataProvider ObjectType="{x:Type ports:SerialPort}" MethodName="GetPortNames" x:Key="portNames"/>
     </Window.Resources>
-    <Window.DataContext>
+    <!--<Window.DataContext>
         <local:ViewModel />
-    </Window.DataContext>
+    </Window.DataContext>-->
     <Grid>
         <GroupBox Header="Step 1 - Connection" HorizontalAlignment="Left" Height="111" Margin="10,10,0,0" VerticalAlignment="Top" Width="380">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
@@ -27,16 +27,16 @@
                 </Grid.RowDefinitions>
                 <ComboBox x:Name="comOptionsPort" HorizontalAlignment="Left" Margin="10,12,0,0" VerticalAlignment="Top" Width="120" ItemsSource="{Binding Source={StaticResource portNames}}" Grid.RowSpan="2" Grid.Column="1"/>
                 <Label Content="COM-Port:" HorizontalAlignment="Left" Margin="8,10,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.208,0.152" Grid.RowSpan="2" Grid.ColumnSpan="2"/>
-                <Button Content="Connect" HorizontalAlignment="Left" Margin="135,12,0,0" VerticalAlignment="Top" Width="75" Height="22" Click="btnConnect" Grid.Column="1" Grid.RowSpan="2"/>
-                <Button Content="Disconnect" HorizontalAlignment="Left" Margin="215,12,0,0" VerticalAlignment="Top" Width="75" Height="22" Click="btnDisconnect" Grid.Column="1" Grid.RowSpan="2"/>
-                <Label Content="Connection Parameters:" HorizontalAlignment="Left" Margin="10,25,0,0" Grid.Row="1" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="135"/>
+                <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="135,12,0,0" VerticalAlignment="Top" Width="75" Height="22" Click="BtnConnect" Grid.Column="1" Grid.RowSpan="2"/>
+                <Button x:Name="btnDisconnect" Content="Disconnect" HorizontalAlignment="Left" Margin="215,12,0,0" VerticalAlignment="Top" Width="75" Height="22" Click="BtnDisconnect" Grid.Column="1" Grid.RowSpan="2" IsEnabled="False"/>
+                <Label Content="Connection parameters:" HorizontalAlignment="Left" Margin="10,25,0,0" Grid.Row="1" VerticalAlignment="Top" Grid.ColumnSpan="2" Width="135"/>
                 <TextBox x:Name="comOptionsDataBits" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="90,29,0,0" Grid.Row="1" TextWrapping="Wrap" Text="8" VerticalAlignment="Top" Width="18"/>
                 <TextBox x:Name="comOptionsParity" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="113,28,0,0" Grid.Row="1" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="18"/>
                 <TextBox x:Name="comOptionsStopBit" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="136,29,0,0" Grid.Row="1" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="18"/>
                 <TextBox x:Name="comOptionsSpeed" Grid.Column="1" HorizontalAlignment="Left" Height="23" Margin="159,29,0,0" Grid.Row="1" TextWrapping="Wrap" Text="115200" VerticalAlignment="Top" Width="51"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Step 2 - Search for Servos" HorizontalAlignment="Left" Height="65" Margin="10,126,0,0" VerticalAlignment="Top" Width="380">
+        <GroupBox x:Name="grpSearchForServos" Header="Step 2 - Search for servos" HorizontalAlignment="Left" Height="65" Margin="10,126,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="4*"/>
@@ -46,11 +46,11 @@
                     <RowDefinition Height="16"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <Button Content="Search Servos" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="151" Height="22" Click="btnSearchServos" Grid.ColumnSpan="2" Grid.RowSpan="2"/>
-                <Button Content="Check for double IDs" HorizontalAlignment="Left" Margin="102,10,0,0" VerticalAlignment="Top" Width="151" Height="22" Click="btnCheckDoubleIds" Grid.RowSpan="2" Grid.Column="1"/>
+                <Button Content="Search servos" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="151" Height="22" Click="BtnSearchServos" Grid.ColumnSpan="2" Grid.RowSpan="2"/>
+                <Button Content="Check for double IDs" HorizontalAlignment="Left" Margin="102,10,0,0" VerticalAlignment="Top" Width="151" Height="22" Click="BtnCheckDoubleIds" Grid.RowSpan="2" Grid.Column="1"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Step 3 - Backup existing Values" HorizontalAlignment="Left" Height="113" Margin="10,196,0,0" VerticalAlignment="Top" Width="380">
+        <GroupBox x:Name="grpBackup" Header="Backup existing Values" HorizontalAlignment="Left" Height="113" Margin="10,196,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="16*"/>
@@ -61,12 +61,12 @@
                     <RowDefinition Height="16"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <Button Content="Backup as profile" HorizontalAlignment="Left" Margin="10,47,0,0" VerticalAlignment="Top" Width="151" Height="22" Click="btnBackupAsProfile" Grid.Row="1" Grid.ColumnSpan="2"/>
-                <Label Grid.ColumnSpan="3" Content="Choose Servo for profile Backup" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="189" Grid.RowSpan="2"/>
-                <ComboBox x:Name="cmbBackUpServo" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="151" ItemsSource="{Binding AvailableServoIDs}" Grid.ColumnSpan="2" Grid.Row="1"/>
+                <Button Content="Backup as profile" HorizontalAlignment="Left" Margin="10,47,0,0" VerticalAlignment="Top" Width="151" Height="22" Click="BtnBackupAsProfile" Grid.Row="1" Grid.ColumnSpan="2"/>
+                <Label Grid.ColumnSpan="3" Content="Choose servo for profile backup" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="189" Grid.RowSpan="2"/>
+                <ComboBox x:Name="cmbBoxBackupServo" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="151" ItemsSource="{Binding AvailableServoIDs}" Grid.ColumnSpan="2" Grid.Row="1"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Step 4 - Prepare Servos for use with SimFeedBack" HorizontalAlignment="Left" Height="179" Margin="10,314,0,0" VerticalAlignment="Top" Width="380">
+        <GroupBox x:Name="grpPrepare" Header="Prepare servos for use with SimFeedBack" HorizontalAlignment="Left" Height="179" Margin="10,314,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="32*"/>
@@ -78,11 +78,10 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
 
-                <Button Content="Prepare Servos" HorizontalAlignment="Left" Margin="10,111,0,0" VerticalAlignment="Top" Width="151" Height="22" Click="btnPrepareServos" Grid.Row="1" Grid.ColumnSpan="2"/>
-                <Label Grid.ColumnSpan="2" Content="Choose Servos to prepare:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="151" Grid.RowSpan="2"/>
+                <Button Content="Prepare servos" HorizontalAlignment="Left" Margin="10,111,0,7" Width="151" Click="BtnPrepareServos" Grid.Row="1" Grid.ColumnSpan="2"/>
+                <Label Grid.ColumnSpan="2" Content="Choose servos to prepare:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="151" Grid.RowSpan="2"/>
                 <ListBox x:Name="listBoxPrepareServos" Margin="10,25,145.05,0"
                  VerticalAlignment="Top"
-                 ItemsSource="{Binding AvailableServoIDs}"
                  SelectionMode="Multiple" Grid.Row="1" Height="81" Grid.ColumnSpan="2">
                     <ListBox.Resources>
                         <Style TargetType="{x:Type ListBoxItem}">
@@ -92,7 +91,7 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                         <CheckBox Margin="5,2"
-                                          IsChecked="{TemplateBinding IsSelected}">
+                                          IsChecked="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
                                             <ContentPresenter />
                                         </CheckBox>
                                     </ControlTemplate>
@@ -103,10 +102,10 @@
                 </ListBox>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Debug Messages" HorizontalAlignment="Left" Height="754" Margin="395,10,0,0" VerticalAlignment="Top" Width="508">
+        <GroupBox Header="Debug Messages" HorizontalAlignment="Left" Height="789" Margin="395,10,0,0" VerticalAlignment="Top" Width="508">
             <ListBox x:Name="debugBox" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </GroupBox>
-        <GroupBox Header="Step 5 - Set custom Profiles" HorizontalAlignment="Left" Height="301" Margin="10,498,0,0" VerticalAlignment="Top" Width="380">
+        <GroupBox x:Name="grpTransfer" Header="Transfer custom profiles to servos" HorizontalAlignment="Left" Height="301" Margin="10,498,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="4*"/>
@@ -117,11 +116,10 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
 
-                <Button Content="Transfer Profile" HorizontalAlignment="Left" Margin="102,230,0,0" VerticalAlignment="Top" Width="192" Height="22" Click="btnTransferProfile" Grid.Row="1" Grid.Column="1"/>
-                <Label Grid.ColumnSpan="2" Content="Choose Servos for Profile:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="151" Grid.RowSpan="2"/>
-                <ListBox Margin="10,25,207,0"
+                <Button Content="Transfer profile" HorizontalAlignment="Left" Margin="102,230,0,0" VerticalAlignment="Top" Width="192" Height="22" Click="BtnTransferProfile" Grid.Row="1" Grid.Column="1"/>
+                <Label Grid.ColumnSpan="2" Content="Choose servos for profile:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="151" Grid.RowSpan="2"/>
+                <ListBox x:Name="listBoxProfileServos" Margin="10,25,207,0"
                     VerticalAlignment="Top"
-                    ItemsSource="{Binding AvailableServoIDs}"
                     SelectionMode="Multiple" Grid.Row="1" Height="81" Grid.ColumnSpan="2">
                     <ListBox.Resources>
                         <Style TargetType="{x:Type ListBoxItem}">
@@ -131,7 +129,7 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                         <CheckBox Margin="5,2"
-                                            IsChecked="{TemplateBinding IsSelected}">
+                                            IsChecked="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
                                             <ContentPresenter />
                                         </CheckBox>
                                     </ControlTemplate>
@@ -140,9 +138,9 @@
                         </Style>
                     </ListBox.Resources>
                 </ListBox>
-                <Label Content="Choose Profile:" HorizontalAlignment="Left" Margin="102,10,0,0" VerticalAlignment="Top" Width="92" Grid.RowSpan="2" Grid.Column="1"/>
+                <Label Content="Choose profile:" HorizontalAlignment="Left" Margin="102,10,0,0" VerticalAlignment="Top" Width="92" Grid.RowSpan="2" Grid.Column="1"/>
                 <ListBox x:Name="listServoProfiles" HorizontalAlignment="Left" Height="200" Margin="102,25,0,0" Grid.Row="1" VerticalAlignment="Top" Width="192" Grid.Column="1"/>
-                <Button Content="refresh list" HorizontalAlignment="Left" Margin="219,14,0,0" VerticalAlignment="Top" Width="75" Height="22" Click="btnProfilesRefresh" Grid.Column="1" Grid.RowSpan="2"/>
+                <Button Content="Refresh list" HorizontalAlignment="Left" Margin="219,14,0,0" VerticalAlignment="Top" Width="75" Height="22" Click="BtnProfilesRefresh" Grid.Column="1" Grid.RowSpan="2"/>
             </Grid>
         </GroupBox>
 
