@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="maxServoId" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">7</Value>
+      <Value Profile="(Default)">8</Value>
     </Setting>
     <Setting Name="servoQueryTimeout" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">300</Value>
