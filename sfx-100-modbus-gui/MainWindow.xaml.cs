@@ -90,11 +90,11 @@ namespace sfx_100_modbus_gui
         /// Reads current parameters from servo and saves them to file 
         /// </summary>
         /// <param name="servoId">ID of servo</param>
-        private void BackupProfile(string servoId)
+        private void BackupProfile(byte servoId)
         {
             Log("backupProfile - servo ID: " + servoId);
             var values = _modBusWrapper.ReadData(Convert.ToByte(servoId), 0, 280);
-            SaveProfile(servoId, values, DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + servoId + "-backup");
+            SaveProfile(servoId, values, DateTime.Now.ToString("yyyyMMddHHmm") + "-" + servoId + "-backup");
         }
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace sfx_100_modbus_gui
         /// <param name="author">Author of the profile</param>
         /// <param name="version">Version of the profile</param>
         /// <param name="info">Additional information of the profile</param>
-        private void SaveProfile(string servoId, Dictionary<int, int> values, string profileName = "", string author = "", string version = "", string info = "")
+        private void SaveProfile(byte servoId, Dictionary<int, int> values, string profileName = "", string author = "", string version = "", string info = "")
         {
             ServoConfigurationProfile tmpSet = new ServoConfigurationProfile();
 
@@ -120,7 +120,7 @@ namespace sfx_100_modbus_gui
 
             foreach (var val in values)
             {
-                var tmpParam = new Param() { Key = val.Key.ToString(), Value = val.Value.ToString() };
+                var tmpParam = new Param() { Key = val.Key, Value = val.Value };
                 tmpSet.Parameters.Add(tmpParam);
             }
 
@@ -319,7 +319,7 @@ namespace sfx_100_modbus_gui
         /// <param name="e"></param>
         private void BtnBackupAsProfile(object sender, RoutedEventArgs e)
         {
-            BackupProfile(cmbBoxBackupServo.SelectedValue.ToString());
+            BackupProfile(Convert.ToByte(cmbBoxBackupServo.SelectedValue));
             LoadAvailableProfiles();
         }
 

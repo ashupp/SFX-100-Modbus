@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Xml.Serialization;
+using System.Xml.XPath;
 
 namespace sfx_100_modbus_lib
 {
@@ -11,6 +12,9 @@ namespace sfx_100_modbus_lib
     /// </summary>
     public class ServoConfigurationProfile
     {
+        /// <summary>
+        /// DateTime when profile was saved
+        /// </summary>
         public DateTime Created { get; set; }
 
         /// <summary>
@@ -36,11 +40,11 @@ namespace sfx_100_modbus_lib
         /// TODO: Currently not in programmatically use
         /// </summary>
         public string Version { get; set; }
-        
+
         /// <summary>
         /// Servo ID from which the profile was saved
         /// </summary>
-        public string OriginServoId { get; set; }
+        public byte OriginServoId { get; set; }
 
         /// <summary>
         /// List of PnXXX Parameters
@@ -62,7 +66,7 @@ namespace sfx_100_modbus_lib
         /// ID of the Servo
         /// </summary>
         [XmlAttribute]
-        public string Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// Name of the Servo
@@ -80,12 +84,12 @@ namespace sfx_100_modbus_lib
         /// Key of the Parameter (i.e 65 for Pn0065)
         /// </summary>
         [XmlAttribute]
-        public string Key { get; set; }
+        public int Key { get; set; }
 
         /// <summary>
         /// Value of the Parameter
         /// </summary>
         [XmlAttribute]
-        public string Value { get; set; }
+        public int Value { get; set; }
     }
 }

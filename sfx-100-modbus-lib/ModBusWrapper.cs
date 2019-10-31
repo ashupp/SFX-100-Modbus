@@ -60,19 +60,26 @@ namespace sfx_100_modbus_lib
 
         /// <summary>
         /// Searches for max 8 attached servos
+        /// Throws Error if counted ID does not match configured ID
         /// </summary>
         /// <returns>Observable int Collection of found servos</returns>
         public ObservableCollection<int> SearchServos()
         {
             ObservableCollection<int> foundServos = new ObservableCollection<int>();
-            for (int i = 1; i <= 1; i++)
+            for (int i = 1; i <= 8; i++)
             {
                 SetServoId(i);
                 try
                 {
-                    var speedResp = ReadValueFromServo(65);
-                    Console.WriteLine("Unit: " + i + " register: " + speedResp.ToString("D3"));
-                    foundServos.Add(i);
+                    var servoIdResponse= ReadValueFromServo(65);
+                    if (servoIdResponse != i)
+                    {
+                        throw new Exception("Wrong ID configured on Servo ID :" + i + " Current value is: " + servoIdResponse);
+                    }
+                    else
+                    {
+                        foundServos.Add(i);
+                    }
                 }
                 catch (Exception ex)
                 {
