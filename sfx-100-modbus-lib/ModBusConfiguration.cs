@@ -12,5 +12,6 @@ namespace sfx_100_modbus_lib
         public Parity Parity;
         public StopBits StopBits;
         public int Speed;
+        public int ConnectionTimeout;
     }
 }

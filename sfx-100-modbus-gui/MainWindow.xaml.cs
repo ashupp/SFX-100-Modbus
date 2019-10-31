@@ -6,9 +6,12 @@ using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using sfx_100_modbus_gui.Properties;
 using Path = System.IO.Path;
 
 namespace sfx_100_modbus_gui
@@ -195,14 +198,18 @@ namespace sfx_100_modbus_gui
         /// <param name="logEntry">Object to log</param>
         private void Log(object logEntry)
         {
-            if (debugBox.Items.Count >= 36)
-            {
-                debugBox.Items.RemoveAt(0);
-            }
-
-            debugBox.Items.Add(DateTime.Now + ": " + logEntry);
-            debugBox.SelectedIndex = debugBox.Items.Count - 1;
-            debugBox.ScrollIntoView(debugBox.SelectedItem);
+            Application.Current.Dispatcher?.BeginInvoke(
+                DispatcherPriority.Normal,
+                new Action(() =>
+                {
+                    if (debugBox.Items.Count >= 36)
+                    {
+                        debugBox.Items.RemoveAt(0);
+                    }
+                    debugBox.Items.Add(DateTime.Now + ": " + logEntry);
+                    debugBox.SelectedIndex = debugBox.Items.Count - 1;
+                    debugBox.ScrollIntoView(debugBox.SelectedItem);
+                }));
         }
 
         /// <summary>
@@ -211,7 +218,6 @@ namespace sfx_100_modbus_gui
         private void RePopulateLists()
         {
             // Todo: WPF Binding instead of this
-            listBoxPrepareServos.ItemsSource = AvailableServoIDs;
             listBoxProfileServos.ItemsSource = AvailableServoIDs;
             cmbBoxBackupServo.ItemsSource = AvailableServoIDs;
         }
@@ -236,7 +242,8 @@ namespace sfx_100_modbus_gui
                 DataBits = Convert.ToInt32(comOptionsDataBits.Text),
                 Parity = (Parity) Enum.Parse(typeof(Parity), comOptionsParity.Text),
                 StopBits = (StopBits) Enum.Parse(typeof(StopBits), comOptionsStopBit.Text),
-                Speed = Convert.ToInt32(comOptionsSpeed.Text)
+                Speed = Convert.ToInt32(comOptionsSpeed.Text),
+                ConnectionTimeout = Settings.Default.servoQueryTimeout
             };
             if (_modBusWrapper.Connect(tmpConfig))
             {
@@ -263,7 +270,6 @@ namespace sfx_100_modbus_gui
                 btnDisconnect.IsEnabled = false;
                 grpSearchForServos.IsEnabled = false;
                 grpBackup.IsEnabled = false;
-                grpPrepare.IsEnabled = false;
                 grpTransfer.IsEnabled = false;
 
             }
@@ -274,16 +280,19 @@ namespace sfx_100_modbus_gui
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void BtnSearchServos(object sender, RoutedEventArgs e)
+        private async void BtnSearchServos(object sender, RoutedEventArgs e)
         {
-            Log("search servos");
-            AvailableServoIDs = _modBusWrapper.SearchServos();
+            Log("searching servos - please wait");
+
+            MainWindowElement.IsEnabled = false;
+            AvailableServoIDs = await Task.Run((() => _modBusWrapper.SearchServos(Settings.Default.maxServoId)));
+            MainWindowElement.IsEnabled = true;
+
             RePopulateLists();
 
             if (AvailableServoIDs.Count > 0)
             {
                 grpBackup.IsEnabled = true;
-                grpPrepare.IsEnabled = true;
                 grpTransfer.IsEnabled = true;
 
                 Log("Servos found: ");
@@ -295,7 +304,6 @@ namespace sfx_100_modbus_gui
             else
             {
                 grpBackup.IsEnabled = false;
-                grpPrepare.IsEnabled = false;
                 grpTransfer.IsEnabled = false;
 
                 Log("No Servos found");
@@ -317,21 +325,13 @@ namespace sfx_100_modbus_gui
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void BtnBackupAsProfile(object sender, RoutedEventArgs e)
+        private async void BtnBackupAsProfile(object sender, RoutedEventArgs e)
         {
-            BackupProfile(Convert.ToByte(cmbBoxBackupServo.SelectedValue));
+            var selectedServo = Convert.ToByte(cmbBoxBackupServo.SelectedValue);
+            MainWindowElement.IsEnabled = false;
+            await Task.Run(() => BackupProfile(selectedServo));
             LoadAvailableProfiles();
-        }
-
-        /// <summary>
-        /// Eventhandler for click on prepare servos for simfeedback
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BtnPrepareServos(object sender, RoutedEventArgs e)
-        {
-            //Todo: Fill with SFX-100 default values
-            Log("prepareServos");
+            MainWindowElement.IsEnabled = true;
         }
 
         /// <summary>
@@ -349,15 +349,18 @@ namespace sfx_100_modbus_gui
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void BtnTransferProfile(object sender, RoutedEventArgs e)
+        private async void BtnTransferProfile(object sender, RoutedEventArgs e)
         {
             if (listServoProfiles.SelectedValue != null)
             {
                 Log("transfer Profile: " + listServoProfiles.SelectedValue);
-                Log("transfer to: " + listBoxProfileServos.SelectedItems);
 
                 Array servosArray = listBoxProfileServos.SelectedItems.Cast<int>().ToArray();
-                TransferProfile(_profileFilesAvailable[listServoProfiles.SelectedValue.ToString()], servosArray);
+                var selectedProfile = _profileFilesAvailable[listServoProfiles.SelectedValue.ToString()];
+
+                MainWindowElement.IsEnabled = false;
+                await Task.Run((() => TransferProfile(selectedProfile, servosArray)));
+                MainWindowElement.IsEnabled = true;
             }
             else
             {

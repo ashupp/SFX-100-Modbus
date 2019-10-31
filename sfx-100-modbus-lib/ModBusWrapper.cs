@@ -23,7 +23,7 @@ namespace sfx_100_modbus_lib
             _modbusClient.Parity = config.Parity;
             _modbusClient.StopBits = config.StopBits;
             _modbusClient.Baudrate = config.Speed;
-            _modbusClient.ConnectionTimeout = 500;
+            _modbusClient.ConnectionTimeout = config.ConnectionTimeout;
             try
             {
                 _modbusClient.Connect();
@@ -59,27 +59,19 @@ namespace sfx_100_modbus_lib
         }
 
         /// <summary>
-        /// Searches for max 8 attached servos
-        /// Throws Error if counted ID does not match configured ID
+        /// Searches for given Servo count
         /// </summary>
         /// <returns>Observable int Collection of found servos</returns>
-        public ObservableCollection<int> SearchServos()
+        public ObservableCollection<int> SearchServos(int maxId)
         {
             ObservableCollection<int> foundServos = new ObservableCollection<int>();
-            for (int i = 1; i <= 8; i++)
+            for (int i = 1; i <= maxId; i++)
             {
                 SetServoId(i);
                 try
                 {
                     var servoIdResponse= ReadValueFromServo(65);
-                    if (servoIdResponse != i)
-                    {
-                        throw new Exception("Wrong ID configured on Servo ID :" + i + " Current value is: " + servoIdResponse);
-                    }
-                    else
-                    {
-                        foundServos.Add(i);
-                    }
+                    foundServos.Add(servoIdResponse);
                 }
                 catch (Exception ex)
                 {
@@ -93,10 +85,40 @@ namespace sfx_100_modbus_lib
         /// Reads a single value from servo
         /// </summary>
         /// <param name="address">Address to read from i.e 65 for Pn0065</param>
-        /// <returns></returns>
+        /// <returns>value</returns>
         private int ReadValueFromServo(int address)
         {
-            return _modbusClient.ReadHoldingRegisters(address, 1)[0];
+            int readValue;
+            try
+            {
+                readValue = _modbusClient.ReadHoldingRegisters(address, 1)[0];
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            return readValue;
+        }
+
+        /// <summary>
+        /// Writes a single value to servo
+        /// </summary>
+        /// <param name="address">Adress to write</param>
+        /// <param name="value">value to write</param>
+        /// <returns>true/false</returns>
+        private bool WriteValueToServo(int address, int value)
+        {
+            try
+            {
+                _modbusClient.WriteSingleRegister(address, value);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
 
         /// <summary>
