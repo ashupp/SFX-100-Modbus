@@ -8,7 +8,7 @@ This tool is based on the research and proof of concept by SimFeedBack community
 
 Right now this is also more a proof of concept than a usable application.
 
-#Warning
+# Warning
 You could make your actuators unsusable, unaccessible or maybe even brick or damage them irreversible.
 
 The changes written by this tool affects the servo driver and its performance directly.
@@ -24,5 +24,5 @@ We are not responsible of any damages caused by usage of this application!
 
 
 # Third party Libraries
-This library uses the EasyModbus Client library
+This library uses the EasyModbus Client library  
 https://sourceforge.net/projects/easymodbustcp/
