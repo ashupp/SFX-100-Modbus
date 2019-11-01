@@ -8,6 +8,15 @@ namespace sfx_100_modbus_lib
     public class ModBusWrapper
     {
         /// <summary>
+        /// Current connection status
+        /// </summary>
+        public bool IsConnected {
+            get
+            {
+                return _modbusClient.Connected;
+            }}
+
+        /// <summary>
         /// Instance of easymodbus client
         /// </summary>
         private ModbusClient _modbusClient = new ModbusClient();
@@ -32,7 +41,7 @@ namespace sfx_100_modbus_lib
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                throw;
+                return false;
             }
         }
 
@@ -52,7 +61,6 @@ namespace sfx_100_modbus_lib
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                    throw;
                 }
             }
             return false;
@@ -126,15 +134,31 @@ namespace sfx_100_modbus_lib
         /// </summary>
         /// <param name="servoId"></param>
         /// <param name="profile"></param>
+        /// <param name="overwriteId">Should the ID of the Servo be overwritten as well? true/false Defaults to false </param>
         /// <returns></returns>
-        public bool WriteProfile(byte servoId, ServoConfigurationProfile profile)
+        public bool WriteProfile(byte servoId, ServoConfigurationProfile profile, bool overwriteId = false)
         {
             try
             {
+                SetServoId(servoId);
                 foreach (var param in profile.Parameters)
                 {
+                    // Special check if overwriteId is set
+                    if (param.Key == 65 && overwriteId == false)
+                    {
+                        Console.WriteLine("omitting: " + param.Key + " - " + param.Value);
+                        continue;
+                    }
                     Console.WriteLine("writing: " + param.Key + " - " + param.Value);
-                    _modbusClient.WriteSingleRegister(Convert.ToInt32(param.Key), Convert.ToInt32(param.Value));
+                    try
+                    {
+                        _modbusClient.WriteSingleRegister(param.Key, param.Value);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+
+                    }
                 }
 
                 //Todo: Implement & Error handling

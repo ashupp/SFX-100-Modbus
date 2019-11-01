@@ -6,7 +6,25 @@
       <Value Profile="(Default)">8</Value>
     </Setting>
     <Setting Name="servoQueryTimeout" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">300</Value>
+      <Value Profile="(Default)">100</Value>
+    </Setting>
+    <Setting Name="comOptionsDataBits" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">8</Value>
+    </Setting>
+    <Setting Name="comOptionsParity" Type="System.IO.Ports.Parity" Scope="User">
+      <Value Profile="(Default)">Odd</Value>
+    </Setting>
+    <Setting Name="comOptionsStopBits" Type="System.IO.Ports.StopBits" Scope="User">
+      <Value Profile="(Default)">One</Value>
+    </Setting>
+    <Setting Name="comOptionsSpeed" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">115200</Value>
+    </Setting>
+    <Setting Name="comOptionsLastConnectedPort" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="comOptionsAutoConnectOnStartup" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>

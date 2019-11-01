@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
@@ -22,6 +23,8 @@ namespace sfx_100_modbus_gui
     /// </summary>
     public partial class MainWindow
     {
+        #region Members
+
         /// <summary>
         /// Dictionary containing available profiles in profile directory
         /// </summary>
@@ -35,20 +38,32 @@ namespace sfx_100_modbus_gui
         /// <summary>
         /// Holds the available servo Ids
         /// </summary>
-        public ObservableCollection<int> AvailableServoIDs = new ObservableCollection<int>();
+        public ObservableCollection<int> AvailableServoIds = new ObservableCollection<int>();
 
+        /// <summary>
+        /// Holds the available serial ports
+        /// </summary>
+        public ObservableCollection<string> AvailableSerialPorts;
+
+        #endregion
+
+        #region Main entry
         /// <summary>
         /// Main Entry
         /// </summary>
         public MainWindow()
         {
             InitializeComponent();
+            Title = Title + " - " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             DataContext = this;
             Log("startup");
-            LoadAvailableProfiles();
+
+            // See Eventhandler MainWindow_OnLoaded
         }
 
-        #region private methods
+        #endregion
+
+        #region Private methods
 
         /// <summary>
         /// Loads available xml based servo profiles from applications subdirectory (servo-profiles)
@@ -90,12 +105,91 @@ namespace sfx_100_modbus_gui
         }
 
         /// <summary>
+        /// Tries to connects to ModBus
+        /// </summary>
+        private void Connect()
+        {
+            Log("Connecting...");
+            var portName = comOptionsPort.SelectedValue.ToString();
+            ModBusConfiguration tmpConfig = new ModBusConfiguration
+            {
+                PortName = portName,
+                DataBits = Settings.Default.comOptionsDataBits,
+                Parity = Settings.Default.comOptionsParity,
+                StopBits = Settings.Default.comOptionsStopBits,
+                Speed = Settings.Default.comOptionsSpeed,
+                ConnectionTimeout = Settings.Default.servoQueryTimeout
+            };
+            if (_modBusWrapper.Connect(tmpConfig))
+            {
+                // Remember current Port by writing to Settings
+                Settings.Default.comOptionsLastConnectedPort = portName;
+
+                btnConnect.IsEnabled = false;
+                btnDisconnect.IsEnabled = true;
+                Log("Connected");
+                SearchServos();
+            }
+            else
+            {
+                Log("Error: Could not connect to port: " + portName);
+            }
+        }
+
+        /// <summary>
+        /// Disconnects from ModBus
+        /// </summary>
+        private void Disconnect()
+        {
+            Log("disconnect");
+            _modBusWrapper.Disconnect();
+            // Todo: Isnt it possible to observe the state and set the enabled state smarter?
+            btnConnect.IsEnabled = true;
+            btnDisconnect.IsEnabled = false;
+            grpBackup.IsEnabled = false;
+            grpTransfer.IsEnabled = false;
+        }
+
+        /// <summary>
+        /// Searches for servos and provides them in AvailableServoIds
+        /// </summary>
+        private async void SearchServos()
+        {
+            Log("searching servos - please wait");
+
+            MainWindowElement.IsEnabled = false;
+            AvailableServoIds = await Task.Run((() => _modBusWrapper.SearchServos(Settings.Default.maxServoId)));
+            MainWindowElement.IsEnabled = true;
+
+            RePopulateLists();
+
+            if (AvailableServoIds.Count > 0)
+            {
+                grpBackup.IsEnabled = true;
+                grpTransfer.IsEnabled = true;
+
+                Log("Servos found: ");
+                foreach (var servo in AvailableServoIds)
+                {
+                    Log("Servo Id: " + servo);
+                }
+            }
+            else
+            {
+                grpBackup.IsEnabled = false;
+                grpTransfer.IsEnabled = false;
+
+                Log("No Servos found");
+            }
+        }
+
+        /// <summary>
         /// Reads current parameters from servo and saves them to file 
         /// </summary>
-        /// <param name="servoId">ID of servo</param>
+        /// <param name="servoId">Id of servo</param>
         private void BackupProfile(byte servoId)
         {
-            Log("backupProfile - servo ID: " + servoId);
+            Log("backupProfile - servo Id: " + servoId);
             var values = _modBusWrapper.ReadData(Convert.ToByte(servoId), 0, 280);
             SaveProfile(servoId, values, DateTime.Now.ToString("yyyyMMddHHmm") + "-" + servoId + "-backup");
         }
@@ -103,7 +197,7 @@ namespace sfx_100_modbus_gui
         /// <summary>
         /// Saves profile to profile folder
         /// </summary>
-        /// <param name="servoId">ID of Servo from which the params are</param>
+        /// <param name="servoId">Id of Servo from which the params are</param>
         /// <param name="values">Values from ModBusWrapper</param>
         /// <param name="profileName">Name of the profile to be saved</param>
         /// <param name="author">Author of the profile</param>
@@ -159,7 +253,6 @@ namespace sfx_100_modbus_gui
             return profile;
         }
 
-
         /// <summary>
         /// Transfers the given profile to the given Servos
         /// </summary>
@@ -172,14 +265,14 @@ namespace sfx_100_modbus_gui
 
             foreach (var servoId in servos)
             {
-                Log("Profile transferring to servo: " + servoId);
+                Log("Profile transferring to servo Id: " + servoId);
                 if (_modBusWrapper.WriteProfile(Convert.ToByte(servoId), profile))
                 {
-                    Log("Transfer to servo: " + servoId + " successful");
+                    Log("Transfer to servo Id: " + servoId + " successful");
                 }
                 else
                 {
-                    Log("Error: transfer to servo: " + servoId + " failed");
+                    Log("Error: transfer to servo Id: " + servoId + " failed");
                 }
             }
 
@@ -213,19 +306,70 @@ namespace sfx_100_modbus_gui
         }
 
         /// <summary>
-        /// Helper method. Repopulates the Servo IDs to the lists and boxes
+        /// Helper method. Repopulates the Servo Ids to the lists and boxes
         /// </summary>
         private void RePopulateLists()
         {
-            // Todo: WPF Binding instead of this
-            listBoxProfileServos.ItemsSource = AvailableServoIDs;
-            cmbBoxBackupServo.ItemsSource = AvailableServoIDs;
+            // Todo: Maybe WPF Binding instead of this
+            listBoxProfileServos.ItemsSource = AvailableServoIds;
+            cmbBoxBackupServo.ItemsSource = AvailableServoIds;
         }
 
+        /// <summary>
+        /// Loads available serial ports and populates in listbox
+        /// </summary>
+        private void LoadAvailableSerialPorts()
+        {
+            try
+            {
+                comOptionsPort.ItemsSource = SerialPort.GetPortNames();
+            }
+            catch (Exception e)
+            {
+                Log("Could not get serial port names: " + e.Message);
+            }
+        }
 
         #endregion
 
-        #region ButtonClicks
+        #region Eventhandlers
+
+        /// <summary>
+        /// Eventhandler called when main window is loaded.
+        /// Loads profiles, serial ports and tries to connect automatically - if set.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            LoadAvailableProfiles();
+
+            try
+            {
+                LoadAvailableSerialPorts();
+                comOptionsPort.SelectedValue = Settings.Default.comOptionsLastConnectedPort;
+
+                if (Settings.Default.comOptionsAutoConnectOnStartup && comOptionsPort.SelectedValue != null)
+                {
+                    Log("Try to connect automatically to: " + comOptionsPort.SelectedValue);
+                    Connect();
+                }
+            }
+            catch (Exception)
+            {
+                Log("Warning: Could not set last connected Port (not found)");
+            }
+        }
+
+        /// <summary>
+        /// Eventhandler is called when refresh serial ports is clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ComPortsRefresh_OnClick(object sender, RoutedEventArgs e)
+        {
+            LoadAvailableSerialPorts();
+        }
 
         /// <summary>
         /// Eventhandler for click on connect
@@ -234,25 +378,7 @@ namespace sfx_100_modbus_gui
         /// <param name="e"></param>
         private void BtnConnect(object sender, RoutedEventArgs e)
         {
-            Log("connect");
-            ModBusConfiguration tmpConfig = new ModBusConfiguration
-            {
-                // Todo: Maybe pass plain values here and take care of conversion in wrapper
-                PortName = comOptionsPort.SelectedValue.ToString(),
-                DataBits = Convert.ToInt32(comOptionsDataBits.Text),
-                Parity = (Parity) Enum.Parse(typeof(Parity), comOptionsParity.Text),
-                StopBits = (StopBits) Enum.Parse(typeof(StopBits), comOptionsStopBit.Text),
-                Speed = Convert.ToInt32(comOptionsSpeed.Text),
-                ConnectionTimeout = Settings.Default.servoQueryTimeout
-            };
-            if (_modBusWrapper.Connect(tmpConfig))
-            {
-                btnConnect.IsEnabled = false;
-                btnDisconnect.IsEnabled = true;
-                grpSearchForServos.IsEnabled = true;
-
-            }
-
+            Connect();
         }
 
         /// <summary>
@@ -262,62 +388,7 @@ namespace sfx_100_modbus_gui
         /// <param name="e"></param>
         private void BtnDisconnect(object sender, RoutedEventArgs e)
         {
-            Log("disconnect");
-            if (_modBusWrapper.Disconnect())
-            { 
-                // Todo: Isnt it possible to observe the state and set the enabled state smarter?
-                btnConnect.IsEnabled = true;
-                btnDisconnect.IsEnabled = false;
-                grpSearchForServos.IsEnabled = false;
-                grpBackup.IsEnabled = false;
-                grpTransfer.IsEnabled = false;
-
-            }
-        }
-
-        /// <summary>
-        /// Eventhandler for click on search servos
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private async void BtnSearchServos(object sender, RoutedEventArgs e)
-        {
-            Log("searching servos - please wait");
-
-            MainWindowElement.IsEnabled = false;
-            AvailableServoIDs = await Task.Run((() => _modBusWrapper.SearchServos(Settings.Default.maxServoId)));
-            MainWindowElement.IsEnabled = true;
-
-            RePopulateLists();
-
-            if (AvailableServoIDs.Count > 0)
-            {
-                grpBackup.IsEnabled = true;
-                grpTransfer.IsEnabled = true;
-
-                Log("Servos found: ");
-                foreach (var servo in AvailableServoIDs)
-                {
-                    Log("Servo Id: " + servo);
-                }
-            }
-            else
-            {
-                grpBackup.IsEnabled = false;
-                grpTransfer.IsEnabled = false;
-
-                Log("No Servos found");
-            }
-        }
-
-        /// <summary>
-        /// Eventhandler for click on check for double Ids
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BtnCheckDoubleIds(object sender, RoutedEventArgs e)
-        {
-            Log("check for double servo IDs");
+            Disconnect();
         }
 
         /// <summary>
@@ -353,7 +424,7 @@ namespace sfx_100_modbus_gui
         {
             if (listServoProfiles.SelectedValue != null)
             {
-                Log("transfer Profile: " + listServoProfiles.SelectedValue);
+                Log("Transfer Profile: " + listServoProfiles.SelectedValue);
 
                 Array servosArray = listBoxProfileServos.SelectedItems.Cast<int>().ToArray();
                 var selectedProfile = _profileFilesAvailable[listServoProfiles.SelectedValue.ToString()];
@@ -366,6 +437,21 @@ namespace sfx_100_modbus_gui
             {
                 Log("Error: no profile selected");
             }
+        }
+
+        /// <summary>
+        /// Eventhandle called when Main window is closing.
+        /// Disconnects from ModBus if connected and saves profile
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MainWindow_OnClosing(object sender, CancelEventArgs e)
+        {
+            if (_modBusWrapper.IsConnected)
+            {
+                Disconnect();
+            }
+            Settings.Default.Save();
         }
 
         #endregion

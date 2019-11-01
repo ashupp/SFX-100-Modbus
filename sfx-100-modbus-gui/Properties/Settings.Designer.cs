@@ -12,7 +12,7 @@ namespace sfx_100_modbus_gui.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.3.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "16.2.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -37,13 +37,85 @@ namespace sfx_100_modbus_gui.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("300")]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
         public int servoQueryTimeout {
             get {
                 return ((int)(this["servoQueryTimeout"]));
             }
             set {
                 this["servoQueryTimeout"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("8")]
+        public int comOptionsDataBits {
+            get {
+                return ((int)(this["comOptionsDataBits"]));
+            }
+            set {
+                this["comOptionsDataBits"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Odd")]
+        public global::System.IO.Ports.Parity comOptionsParity {
+            get {
+                return ((global::System.IO.Ports.Parity)(this["comOptionsParity"]));
+            }
+            set {
+                this["comOptionsParity"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("One")]
+        public global::System.IO.Ports.StopBits comOptionsStopBits {
+            get {
+                return ((global::System.IO.Ports.StopBits)(this["comOptionsStopBits"]));
+            }
+            set {
+                this["comOptionsStopBits"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("115200")]
+        public int comOptionsSpeed {
+            get {
+                return ((int)(this["comOptionsSpeed"]));
+            }
+            set {
+                this["comOptionsSpeed"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string comOptionsLastConnectedPort {
+            get {
+                return ((string)(this["comOptionsLastConnectedPort"]));
+            }
+            set {
+                this["comOptionsLastConnectedPort"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool comOptionsAutoConnectOnStartup {
+            get {
+                return ((bool)(this["comOptionsAutoConnectOnStartup"]));
+            }
+            set {
+                this["comOptionsAutoConnectOnStartup"] = value;
             }
         }
     }
