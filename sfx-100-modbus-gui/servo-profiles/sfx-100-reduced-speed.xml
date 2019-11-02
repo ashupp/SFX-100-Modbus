@@ -1,11 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ServoConfigurationProfile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="sfx-100-reduced-speed">
-  <Created>2019-11-01T14:41:57.6805054+01:00</Created>
+	<Created>2019-11-02T12:55:00.0000000+01:00</Created>
   <Info>Default profile for SFX-100 with reduced speed for first runs</Info>
   <Author>ashupp</Author>
-  <Version>1.0.0</Version>
+  <Version>1.0.1</Version>
   <OriginServoId>1</OriginServoId>
   <Parameters>
-    <Param Key="51" Value="1500" />
+    <Param Key="8" Value="300" />
+    <Param Key="9" Value="-300" />
+    <Param Key="51" Value="1200" />
+    <Param Key="98" Value="20" />
+    <Param Key="109" Value="1" />
+    <Param Key="110" Value="30" />
+    <Param Key="113" Value="20" />
+    <Param Key="114" Value="10" />
+    <Param Key="115" Value="100" />
   </Parameters>
 </ServoConfigurationProfile>
