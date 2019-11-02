@@ -78,7 +78,7 @@ Connect the red cables to 485+/A+, the green cables to 485-/B- and the black cab
 You can use Wago clamps to hook all same color wires together.  
 Since it is a bus system all servo drives can be connected at the same time to the adapter.
 
-![Prototype wiring](doc/img/prototype-wiring.jpg?raw=true | width=200)
+![Prototype wiring](doc/img/prototype-wiring.jpg?raw=true|width=200)
 
 ### Step 4 - Launch the app
 Even though the app is pretty much self-explanatory - details will follow.
