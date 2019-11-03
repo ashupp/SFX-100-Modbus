@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Allgemeine Informationen über eine Assembly werden über die folgenden
 // Attribute gesteuert. Ändern Sie diese Attributwerte, um die Informationen zu ändern,
 // die einer Assembly zugeordnet sind.
-[assembly: AssemblyTitle("sfx-100-modbus-lib")]
+[assembly: AssemblyTitle("sfx-100-modbus-sfb-extension")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("ashnet GmbH")]
-[assembly: AssemblyProduct("sfx-100-modbus-lib")]
+[assembly: AssemblyCompany("")]
+[assembly: AssemblyProduct("sfx-100-modbus-sfb-extension")]
 [assembly: AssemblyCopyright("Copyright ©  ashnet GmbH 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // Die folgende GUID bestimmt die ID der Typbibliothek, wenn dieses Projekt für COM verfügbar gemacht wird
-[assembly: Guid("c9c4694f-4c3e-4026-9e9c-f7f9ec51a8bf")]
+[assembly: Guid("0192378e-d172-4661-a198-a7976ab3d7e0")]
 
 // Versionsinformationen für eine Assembly bestehen aus den folgenden vier Werten:
 //
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // Sie können alle Werte angeben oder Standardwerte für die Build- und Revisionsnummern verwenden,
 // indem Sie "*" wie unten gezeigt eingeben:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.0.1.2")]
-[assembly: AssemblyFileVersion("0.0.1.2")]
+[assembly: AssemblyVersion("0.0.1.0")]
+[assembly: AssemblyFileVersion("0.0.1.0")]

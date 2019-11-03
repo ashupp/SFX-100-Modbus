@@ -90,11 +90,23 @@ namespace sfx_100_modbus_lib
         }
 
         /// <summary>
-        /// Reads a single value from servo
+        /// Reads a single value from given servo
+        /// </summary>
+        /// <param name="servoId">ID of servo to read parameter from</param>
+        /// <param name="address">Address to read from i.e 65 for Pn0065</param>
+        /// <returns></returns>
+        public int ReadValueFromServo(int servoId, int address)
+        {
+            SetServoId(servoId);
+            return ReadValueFromServo(address);
+        }
+
+        /// <summary>
+        /// Reads a single value from current servo
         /// </summary>
         /// <param name="address">Address to read from i.e 65 for Pn0065</param>
         /// <returns>value</returns>
-        private int ReadValueFromServo(int address)
+        public int ReadValueFromServo(int address)
         {
             int readValue;
             try
@@ -110,12 +122,24 @@ namespace sfx_100_modbus_lib
         }
 
         /// <summary>
+        /// Writes a single value to a given servo
+        /// </summary>
+        /// <param name="address">Adress to write</param>
+        /// <param name="value">value to write</param>
+        /// <returns>true/false</returns>
+        public int WriteValueToServo(int servoId, int address, int value)
+        {
+            SetServoId(servoId);
+            return ReadValueFromServo(address);
+        }
+
+        /// <summary>
         /// Writes a single value to servo
         /// </summary>
         /// <param name="address">Adress to write</param>
         /// <param name="value">value to write</param>
         /// <returns>true/false</returns>
-        private bool WriteValueToServo(int address, int value)
+        public bool WriteValueToServo(int address, int value)
         {
             try
             {
@@ -152,7 +176,7 @@ namespace sfx_100_modbus_lib
                     Console.WriteLine("writing: " + param.Key + " - " + param.Value);
                     try
                     {
-                        _modbusClient.WriteSingleRegister(param.Key, param.Value);
+                        WriteValueToServo(param.Key, param.Value);
                     }
                     catch (Exception e)
                     {
