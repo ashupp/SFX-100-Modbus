@@ -4,6 +4,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:sfx_100_modbus_sfb_extension"
+             Unloaded="ModBusExtensionControlGUI_OnUnloaded"
+             Loaded="ModBusExtensionControlGUI_OnLoaded"
              x:Name="ModBusExtensionControlGuiElement"
              mc:Ignorable="d" Height="613.445" Width="910.643" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
     <Grid>
@@ -94,11 +96,13 @@
         <GroupBox Header="Live Data Manipulation" HorizontalAlignment="Left" Height="247" Margin="395,56,0,0" VerticalAlignment="Top" Width="506" Grid.ColumnSpan="2">
             <Grid>
                 <Label x:Name="rpmLabel" Content="Max RPM (Pn051):" HorizontalAlignment="Left" Margin="202,9,0,0" VerticalAlignment="Top"/>
-                <TextBox VerticalContentAlignment="Center" Text="{Binding ElementName=rpmSlider, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Margin="427,40,10,154" />
-                <Slider x:Name="rpmSlider" IsSnapToTickEnabled="True" Maximum="3000" TickPlacement="Both" TickFrequency="100" DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="202,40,0,0" VerticalAlignment="Top" Width="220" ValueChanged="rpmSlider_ValueChanged"/>
+                <TextBox x:Name="txtBoxRpm" VerticalContentAlignment="Center" Text="{Binding ElementName=rpmSlider, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Margin="384,40,66,154" />
+                <Slider x:Name="rpmSlider" IsSnapToTickEnabled="True" Maximum="3000" TickPlacement="Both" TickFrequency="100" DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="202,40,0,0" VerticalAlignment="Top" Width="177" ValueChanged="rpmSlider_ValueChanged"/>
                 <ListBox x:Name="listBoxManipulationServos" Margin="10,40,333,0"
                     VerticalAlignment="Top"
-                    SelectionMode="Multiple" Height="170" SelectionChanged="listBoxManipulationServos_SelectionChanged">
+                    SelectionMode="Multiple" Height="170"
+                    SelectionChanged="ListBoxManipulationServos_OnSelectionChanged"
+                    >
                     <ListBox.Resources>
                         <Style TargetType="{x:Type ListBoxItem}">
                             <Setter Property="OverridesDefaultStyle" Value="true" />
@@ -117,6 +121,7 @@
                     </ListBox.Resources>
                 </ListBox>
                 <Label Content="Choose servos:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="180"/>
+                <Button x:Name="btnSetRpm" Content="Set" HorizontalAlignment="Left" Margin="433,40,0,0" VerticalAlignment="Top" Width="51" Height="30" Click="btnSetRpm_Click"/>
             </Grid>
         </GroupBox>
     </Grid>

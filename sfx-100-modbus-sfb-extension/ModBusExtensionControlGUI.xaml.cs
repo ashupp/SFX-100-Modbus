@@ -6,6 +6,7 @@ using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,7 +29,7 @@ namespace sfx_100_modbus_sfb_extension
     /// </summary>
     public partial class ModBusExtensionControlGUI : UserControl
     {
-        private ModBusExtensionConfig Settings;
+        private ModBusExtensionConfig Settings = new ModBusExtensionConfig();
 
         public ModBusExtensionControlGUI()
         {
@@ -80,7 +81,8 @@ namespace sfx_100_modbus_sfb_extension
         {
             Log("loadAvailableProfiles");
 
-            var servoProfilesPath = Path.Combine(Directory.GetCurrentDirectory(), "servo-profiles");
+            var currentDirectory = new Uri(System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath;
+            var servoProfilesPath = Path.Combine(currentDirectory, "servo-profiles");
             if (Directory.Exists(servoProfilesPath))
             {
                 var foundServoProfiles = Directory.GetFiles(servoProfilesPath, "*.xml");
@@ -94,7 +96,7 @@ namespace sfx_100_modbus_sfb_extension
                     listServoProfiles.Items.Add(shortProfileName);
                 }
 
-                Log("servo-profile path and files loaded");
+                Log("servo-profile path and files loaded. Path: " + servoProfilesPath);
             }
             else
             {
@@ -343,34 +345,7 @@ namespace sfx_100_modbus_sfb_extension
         #endregion
 
         #region Eventhandlers
-
-        /// <summary>
-        /// Eventhandler called when main window is loaded.
-        /// Loads profiles, serial ports and tries to connect automatically - if set.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
-        {
-            LoadAvailableProfiles();
-
-            try
-            {
-                LoadAvailableSerialPorts();
-                comOptionsPort.SelectedValue = Settings.comOptionsLastConnectedPort;
-
-                if (Settings.comOptionsAutoConnectOnStartup && comOptionsPort.SelectedValue != null)
-                {
-                    Log("Try to connect automatically to: " + comOptionsPort.SelectedValue);
-                    Connect();
-                }
-            }
-            catch (Exception)
-            {
-                Log("Warning: Could not set last connected Port (not found)");
-            }
-        }
-
+        
         /// <summary>
         /// Eventhandler is called when refresh serial ports is clicked
         /// </summary>
@@ -469,6 +444,28 @@ namespace sfx_100_modbus_sfb_extension
 
         #endregion
 
+
+        private void setRPM(int value)
+        {
+            Log("Setting RPM to: " + value);
+            var valueToSet = Convert.ToInt32(value);
+
+            if (valueToSet >= 0 && valueToSet <= 3000)
+            {
+                foreach (int servoId in listBoxManipulationServos.SelectedItems)
+                {
+                    _modBusWrapper.WriteValueToServo(servoId, 51, valueToSet);
+                    Log("RPM: Value: " + valueToSet + " written to servo: " + servoId);
+                    var checkValue = _modBusWrapper.ReadValueFromServo(servoId, 51);
+                    Log("RPM: Value Check - Got: " + checkValue + " from servo: " + servoId);
+                }
+            }
+            else
+            {
+                Log("RPM: Invalid Value: " + value);
+            }
+        }
+
         /// <summary>
         /// Eventhandler triggered wehen slider value has changed
         /// </summary>
@@ -476,46 +473,80 @@ namespace sfx_100_modbus_sfb_extension
         /// <param name="e"></param>
         private void rpmSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            var valueToSet = Convert.ToInt32(e.NewValue);
-            Console.WriteLine();
+            //setRPM(e.NewValue);
+        }
 
-            if (valueToSet >= 0 && valueToSet <= 3000)
+        /// <summary>
+        /// Eventhandler called when controlis loaded.
+        /// Loads profiles, serial ports and tries to connect automatically - if set.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ModBusExtensionControlGUI_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            LoadAvailableProfiles();
+
+            try
             {
-                foreach (int servoId in listBoxProfileServos.SelectedItems)
+                LoadAvailableSerialPorts();
+                comOptionsPort.SelectedValue = Settings.comOptionsLastConnectedPort;
+
+                if (Settings.comOptionsAutoConnectOnStartup && comOptionsPort.SelectedValue != null)
                 {
-                    _modBusWrapper.WriteValueToServo(servoId, 52, valueToSet);
-                    Log("RPM: Value: " + valueToSet + " written to servo: " + servoId);
-                    var checkValue =_modBusWrapper.ReadValueFromServo(servoId, 52);
-                    Log("RPM: Value Check - Got: " + checkValue + " from servo: " + servoId);
+                    Log("Try to connect automatically to: " + comOptionsPort.SelectedValue);
+                    Connect();
                 }
             }
-            else
+            catch (Exception)
             {
-                rpmSlider.Value = e.OldValue;
+                Log("Warning: Could not set last connected Port (not found)");
             }
         }
 
-        private void listBoxManipulationServos_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ModBusExtensionControlGUI_OnUnloaded(object sender, RoutedEventArgs e)
         {
-            // Try to get value from servo drives. 
+            Disconnect();
+        }
+
+        private void btnSetRpm_Click(object sender, RoutedEventArgs e)
+        {
+            setRPM(Convert.ToInt32(rpmSlider.Value));
+        }
+
+
+
+        private void ListBoxManipulationServos_OnSelected(object sender, RoutedEventArgs e)
+        {
+            checkSelectedServosLive();
+        }
+
+        private void checkSelectedServosLive()
+        {
+            Log("Selection of live servos changed");
 
             List<int> currentValues = new List<int>();
-            var valueToSet = 3000;
 
-            foreach (int servoId in listBoxProfileServos.SelectedItems)
-            {
+            Array servosArray = listBoxManipulationServos.SelectedItems.Cast<int>().ToArray();
+
+            foreach (int servoId in servosArray) {
                 currentValues[servoId] = _modBusWrapper.ReadValueFromServo(servoId, 51);
+                Log("RPM: Servo select current value: " + currentValues[servoId] + " on servo: " + servoId);
             }
 
-            if (currentValues.Any(o => o != currentValues[0]))
+            if (currentValues.All(x => x == currentValues.First()))
             {
-                Log("RPM change: Values of all selected servos are not the same. Writing 3000 for all selected");
-                rpmSlider.Value = 3000;
+                Log("RPM change: Values of all selected servos are the same: " + currentValues.First());
+                rpmSlider.Value = currentValues.First();
             }
             else
             {
-                rpmSlider.Value = currentValues[0];
+                Log("RPM change: Values of all selected servos are not the same. Setting slider to 3000 (not yet written)");
+                rpmSlider.Value = 3000;
             }
+        }
+        private void ListBoxManipulationServos_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            checkSelectedServosLive();
         }
     }
 }

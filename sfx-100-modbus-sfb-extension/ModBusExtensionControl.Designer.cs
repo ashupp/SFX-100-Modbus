@@ -35,9 +35,10 @@
             // elementHost
             // 
             this.elementHost.AutoSize = true;
-            this.elementHost.Location = new System.Drawing.Point(3, 3);
+            this.elementHost.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.elementHost.Location = new System.Drawing.Point(0, 0);
             this.elementHost.Name = "elementHost";
-            this.elementHost.Size = new System.Drawing.Size(903, 557);
+            this.elementHost.Size = new System.Drawing.Size(1186, 814);
             this.elementHost.TabIndex = 1;
             this.elementHost.Text = "elementHost1";
             this.elementHost.ChildChanged += new System.EventHandler<System.Windows.Forms.Integration.ChildChangedEventArgs>(this.elementHost_ChildChanged);
@@ -49,7 +50,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.elementHost);
             this.Name = "ModBusExtensionControl";
-            this.Size = new System.Drawing.Size(915, 571);
+            this.Size = new System.Drawing.Size(1186, 814);
             this.Load += new System.EventHandler(this.ModBusExtensionControl_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading;
 using EasyModbus;
 
 namespace sfx_100_modbus_lib
@@ -127,10 +128,10 @@ namespace sfx_100_modbus_lib
         /// <param name="address">Adress to write</param>
         /// <param name="value">value to write</param>
         /// <returns>true/false</returns>
-        public int WriteValueToServo(int servoId, int address, int value)
+        public bool WriteValueToServo(int servoId, int address, int value)
         {
             SetServoId(servoId);
-            return ReadValueFromServo(address);
+            return WriteValueToServo(address, value);
         }
 
         /// <summary>
@@ -144,6 +145,7 @@ namespace sfx_100_modbus_lib
             try
             {
                 _modbusClient.WriteSingleRegister(address, value);
+                Thread.Sleep(6);
                 return true;
             }
             catch (Exception e)
