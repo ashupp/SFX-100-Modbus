@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.elementHost = new System.Windows.Forms.Integration.ElementHost();
-            this.modBusExtensionControlGUI1 = new sfx_100_modbus_sfb_extension.ModBusExtensionControlGUI();
+            this.modBusExtensionControlGUI1 = new sfx_100_modbus_sfb_extension.ModBusExtensionControlGui();
             this.SuspendLayout();
             // 
             // elementHost
@@ -59,6 +59,6 @@
 
         #endregion
         private System.Windows.Forms.Integration.ElementHost elementHost;
-        private ModBusExtensionControlGUI modBusExtensionControlGUI1;
+        private ModBusExtensionControlGui modBusExtensionControlGUI1;
     }
 }

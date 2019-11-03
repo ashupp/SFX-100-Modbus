@@ -63,8 +63,8 @@
     <Compile Include="ModBusExtensionControl.Designer.cs">
       <DependentUpon>ModBusExtensionControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="ModBusExtensionControlGUI.xaml.cs">
-      <DependentUpon>ModBusExtensionControlGUI.xaml</DependentUpon>
+    <Compile Include="ModBusExtensionControlGui.xaml.cs">
+      <DependentUpon>ModBusExtensionControlGui.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -80,7 +80,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="ModBusExtensionControlGUI.xaml">
+    <Page Include="ModBusExtensionControlGui.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
