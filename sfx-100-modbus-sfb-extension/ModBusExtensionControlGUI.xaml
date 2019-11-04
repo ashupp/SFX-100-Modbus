@@ -52,7 +52,7 @@
                 <ComboBox x:Name="cmbBoxBackupServo" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="151" Grid.ColumnSpan="2" Grid.Row="1"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Debug Messages" HorizontalAlignment="Left" Height="245" Margin="395,444,0,0" VerticalAlignment="Top" Width="776" Grid.ColumnSpan="2">
+        <GroupBox Header="Debug Messages" HorizontalAlignment="Left" Height="173" Margin="395,516,0,0" VerticalAlignment="Top" Width="776" Grid.ColumnSpan="2">
             <ListBox x:Name="debugBox" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </GroupBox>
         <GroupBox x:Name="grpTransfer" Header="Transfer profiles to servos" HorizontalAlignment="Left" Height="408" Margin="10,281,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
@@ -95,12 +95,12 @@
             </Grid>
         </GroupBox>
         <Label x:Name="modBusExtensionTitle" Content="ModBus Extension" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" FontSize="24"/>
-        <GroupBox x:Name="grpLiveDataManipulation" Header="Live Data Manipulation" HorizontalAlignment="Left" Height="372" Margin="395,67,0,0" VerticalAlignment="Top" Width="776" Grid.ColumnSpan="2">
+        <GroupBox x:Name="grpLiveDataManipulation" Header="Live Data Manipulation" HorizontalAlignment="Left" Height="444" Margin="395,67,0,0" VerticalAlignment="Top" Width="776" Grid.ColumnSpan="2">
 
             <Grid>
-                <ListBox x:Name="listBoxManipulationServos" Margin="10,36,0,0"
+                <ListBox x:Name="listBoxManipulationServos" Margin="10,31,0,0"
                          VerticalAlignment="Top"
-                         SelectionMode="Multiple" Height="175"
+                         SelectionMode="Multiple" Height="170"
                          SelectionChanged="ListBoxManipulationServos_OnSelectionChanged" HorizontalAlignment="Left" Width="151"
                 >
                     <ListBox.Resources>
@@ -120,13 +120,18 @@
                         </Style>
                     </ListBox.Resources>
                 </ListBox>
-                <Label Content="Choose servos:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="180"/>
-                <Border Margin="176,36,10,10" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" BorderThickness="1">
+                <Label Content="Choose servos:" HorizontalAlignment="Left" Margin="10,5,0,0" VerticalAlignment="Top" Width="180"/>
+                <Border Margin="176,31,10,10" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" BorderThickness="1">
                     <ScrollViewer x:Name="propertyScrollViewer" HorizontalAlignment="Stretch" Height="auto" VerticalAlignment="Stretch" Width="auto" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionTextBrushKey}}">
                         <StackPanel x:Name="propertySliderStackPanel" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
                     </ScrollViewer>
                 </Border>
-                <Label Content="Parameters:" HorizontalAlignment="Left" Margin="176,10,0,0" VerticalAlignment="Top" Width="180"/>
+                <Label Content="Parameters:" HorizontalAlignment="Left" Margin="176,5,0,0" VerticalAlignment="Top" Width="180"/>
+                <Button x:Name="btnSavePermanent" Content="Save permanent" HorizontalAlignment="Left" Margin="10,387,0,0" VerticalAlignment="Top" Width="151" Height="24" Click="btnSavePermanent_Click"/>
+                <TextBlock HorizontalAlignment="Left" Margin="10,233,0,0" TextWrapping="Wrap" Text="Attention: 
+                           The parameters will be reverted after power-cycle of the servo. Hit the button below to write the data to servo driver memory. 
+                           Try not to save often as EEPROM-Memory wears out." VerticalAlignment="Top" Height="149" Width="151"/>
+                <Button Content="🗘" HorizontalAlignment="Left" Margin="729,5,0,0" VerticalAlignment="Top" Width="25" Height="22" Click="BtnParametersRefresh"/>
             </Grid>
         </GroupBox>
         <TextBlock HorizontalAlignment="Left" Margin="10,42,0,0" VerticalAlignment="Top"><Hyperlink NavigateUri="https://github.com/ashupp/SFX-100-Modbus" RequestNavigate="Hyperlink_OnRequestNavigate" ><Run Text="https://github.com/ashupp/SFX-100-Modbus"/></Hyperlink></TextBlock>

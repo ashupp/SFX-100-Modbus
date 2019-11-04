@@ -231,5 +231,30 @@ namespace sfx_100_modbus_lib
         {
             _modbusClient.UnitIdentifier = Convert.ToByte(servoId);
         }
+
+        /// <summary>
+        /// Saves the whole Settings to EEPROM
+        /// </summary>
+        public bool PersistParametersToMemory(int servoId)
+        {
+            SetServoId(servoId);
+            var currentPersistState = ReadValueFromServo(81);
+            if (currentPersistState == 0)
+            {
+                //WriteValueToServo(81, 1);
+            }
+            else
+            {
+                if (WriteValueToServo(81, 0))
+                {
+
+                }
+                //WriteValueToServo(81, 1);
+            }
+            // We have to wait until saving is complete
+            Thread.Sleep(5000);
+
+            return true;
+        }
     }
 }

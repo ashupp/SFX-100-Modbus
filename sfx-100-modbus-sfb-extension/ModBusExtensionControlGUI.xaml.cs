@@ -95,7 +95,7 @@ namespace sfx_100_modbus_sfb_extension
             {
                 using (var reader = new FileStream(_servoParametersFile, FileMode.Open))
                 {
-                    _servoConfigurationParameters = (ServoConfigurationParameters)xmlProfileSerializer.Deserialize(reader);
+                    _servoConfigurationParameters = (ServoConfigurationParameters) xmlProfileSerializer.Deserialize(reader);
                 }
             }
             catch (Exception e)
@@ -181,7 +181,7 @@ namespace sfx_100_modbus_sfb_extension
         /// </summary>
         private void AddSliders()
         {
-            
+
             _propertySliderControlsList = new Dictionary<int, PropertySliderControl>();
             propertySliderStackPanel.Children.Clear();
 
@@ -203,7 +203,7 @@ namespace sfx_100_modbus_sfb_extension
 
                 propertySliderStackPanel.Children.Add(tmpSliderControl);
                 propertySliderStackPanel.Children.Add(new Separator());
-                
+
                 _propertySliderControlsList.Add(servoConfigurationParameter.Key, tmpSliderControl);
             }
             grpLiveDataManipulation.IsEnabled = true;
@@ -222,6 +222,8 @@ namespace sfx_100_modbus_sfb_extension
             grpBackup.IsEnabled = false;
             grpTransfer.IsEnabled = false;
             grpLiveDataManipulation.IsEnabled = false;
+            listBoxManipulationServos.ItemsSource = null;
+            listBoxProfileServos.ItemsSource = null;
         }
 
         /// <summary>
@@ -291,7 +293,7 @@ namespace sfx_100_modbus_sfb_extension
 
             foreach (var val in values)
             {
-                var tmpParam = new Param() { Key = val.Key, Value = val.Value };
+                var tmpParam = new Param() {Key = val.Key, Value = val.Value};
                 tmpSet.Parameters.Add(tmpParam);
             }
 
@@ -299,7 +301,7 @@ namespace sfx_100_modbus_sfb_extension
 
             using (var sww = new StringWriterWithEncoding(Encoding.UTF8))
             {
-                using (XmlTextWriter writer = new XmlTextWriter(sww) { Formatting = Formatting.Indented })
+                using (XmlTextWriter writer = new XmlTextWriter(sww) {Formatting = Formatting.Indented})
                 {
                     xmlProfileSerializer.Serialize(writer, tmpSet);
                     var xml = sww.ToString();
@@ -322,7 +324,7 @@ namespace sfx_100_modbus_sfb_extension
             ServoConfigurationProfile profile;
             using (var reader = new FileStream(profilePath, FileMode.Open))
             {
-                profile = (ServoConfigurationProfile)xmlProfileSerializer.Deserialize(reader);
+                profile = (ServoConfigurationProfile) xmlProfileSerializer.Deserialize(reader);
             }
             return profile;
         }
@@ -349,10 +351,7 @@ namespace sfx_100_modbus_sfb_extension
                     Log("Error: transfer to servo Id: " + servoId + " failed");
                 }
             }
-
             Log("Profile transfer finished");
-            //throw new NotImplementedException();
-
         }
 
         /// <summary>
@@ -361,7 +360,7 @@ namespace sfx_100_modbus_sfb_extension
         /// </summary>
         private void ReloadParameterDataOfSelectedServos()
         {
-            Log("Live Data: Selection of servos changed, refreshing data");
+            Log("Live Data: Refreshing Parameters");
 
             // Leeres Dictionary erzeugen
 
@@ -428,6 +427,39 @@ namespace sfx_100_modbus_sfb_extension
             }
         }
 
+        /// <summary>
+        /// Saves current Parameters permanent to EEPROM
+        /// </summary>
+        /// <param name="servosArray">Servos to persist parameters on</param>
+        /// <returns></returns>
+        private bool SavePermanent(Array servosArray)
+        {
+            Log("******** WRITING PARAMETERS TO EEPROM - PLEASE WAIT - TAKES 5 Seconds per SERVO ********");
+            try
+            {
+                if (servosArray.Length > 0)
+                {
+                    foreach (int servoId in servosArray)
+                    {
+                        Log("Write Parameters to EEPROM of servo: " + servoId);
+                        if (_modBusWrapper.PersistParametersToMemory(servoId))
+                        {
+                            Log("Parameters written to EEPROM of servo:" + servoId);
+                        }
+                        else
+                        {
+                            Log("Error during write of parameters to EEPROM of servo: " + servoId);
+                        }
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Log("Exception during write of parameters to EEPROM" + exception.Message);
+                throw;
+            }
+            return true;
+        }
 
         #endregion
 
@@ -588,6 +620,16 @@ namespace sfx_100_modbus_sfb_extension
         }
 
         /// <summary>
+        /// Eventhandler for click on parameters refresh
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnParametersRefresh(object sender, RoutedEventArgs e)
+        {
+            ReloadParameterDataOfSelectedServos();
+        }
+
+        /// <summary>
         /// Eventhandler for click on transfer profile
         /// </summary>
         /// <param name="sender"></param>
@@ -602,8 +644,9 @@ namespace sfx_100_modbus_sfb_extension
                 var selectedProfile = _profileFilesAvailable[listServoProfiles.SelectedValue.ToString()];
 
                 ModBusExtensionControlGuiElement.IsEnabled = false;
-                await Task.Run((() => TransferProfile(selectedProfile, servosArray)));
-                ModBusExtensionControlGuiElement.IsEnabled = true;
+                await Task.Run(() => TransferProfile(selectedProfile, servosArray));
+                await Task.Run(() => SavePermanent(servosArray));
+            ModBusExtensionControlGuiElement.IsEnabled = true;
             }
             else
             {
@@ -673,7 +716,7 @@ namespace sfx_100_modbus_sfb_extension
             if (sliderControl != null)
             {
                 Log("Clicked reset value: " + sliderControl.PName + "(" + sliderControl.Key + ") -- " + e.Value);
-                WriteSliderValueToSelectedServos(sliderControl,e);
+                WriteSliderValueToSelectedServos(sliderControl, e);
             }
         }
 
@@ -698,6 +741,19 @@ namespace sfx_100_modbus_sfb_extension
         {
             Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
             e.Handled = true;
+        }
+
+        /// <summary>
+        /// Eventhandler launched when clicking on save permanent
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void btnSavePermanent_Click(object sender, RoutedEventArgs e)
+        {
+            Array servosArray = listBoxManipulationServos.SelectedItems.Cast<int>().ToArray();
+            ModBusExtensionControlGuiElement.IsEnabled = false;
+            await Task.Run((() => SavePermanent(servosArray)));
+            ModBusExtensionControlGuiElement.IsEnabled = true;
         }
 
         #endregion
