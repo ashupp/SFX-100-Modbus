@@ -4,16 +4,17 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:sfx_100_modbus_sfb_extension"
+             xmlns:p="clr-namespace:sfx_100_modbus_sfb_extension.Properties"
              Unloaded="ModBusExtensionControlGUI_OnUnloaded"
              Loaded="ModBusExtensionControlGUI_OnLoaded"
              x:Name="ModBusExtensionControlGuiElement"
-             mc:Ignorable="d" Height="613.445" Width="910.643" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+             mc:Ignorable="d" Height="711.445" Width="1180.643" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="107*"/>
             <ColumnDefinition Width="121*"/>
         </Grid.ColumnDefinitions>
-        <GroupBox Header="Connection" HorizontalAlignment="Left" Height="91" Margin="10,56,0,0" VerticalAlignment="Top" Width="380">
+        <GroupBox Header="Connection" HorizontalAlignment="Left" Height="91" Margin="10,67,0,0" VerticalAlignment="Top" Width="380">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="4*"/>
@@ -28,13 +29,14 @@
                 <Button x:Name="btnConnect" Content="Connect" HorizontalAlignment="Left" Margin="135,12,0,0" VerticalAlignment="Top" Width="75" Height="22" Click="BtnConnect" Grid.Column="1" Grid.RowSpan="2"/>
                 <Button x:Name="btnDisconnect" Content="Disconnect" HorizontalAlignment="Left" Margin="215,12,0,0" VerticalAlignment="Top" Width="75" Height="22" Click="BtnDisconnect" Grid.Column="1" Grid.RowSpan="2" IsEnabled="False"/>
                 <CheckBox x:Name="chkAutoConnect" Content="Automatically connect on GUI Startup" HorizontalAlignment="Left" Margin="10,26,0,0" Grid.Row="1" VerticalAlignment="Top" Grid.ColumnSpan="2" 
-                    IsChecked="{Binding comOptionsAutoConnectOnStartup, 
+                          IsChecked="{Binding comOptionsAutoConnectOnStartup, 
                     Mode=TwoWay, 
+                    Source={x:Static p:Settings.Default}, 
                     UpdateSourceTrigger=PropertyChanged}"/>
                 <Button x:Name="comPortsRefresh" Content="🗘" HorizontalAlignment="Left" Margin="105,12,0,0" VerticalAlignment="Top" Width="25" Height="22" Click="ComPortsRefresh_OnClick" Grid.Column="1" Grid.RowSpan="2"/>
             </Grid>
         </GroupBox>
-        <GroupBox x:Name="grpBackup" Header="Backup existing profile" HorizontalAlignment="Left" Height="113" Margin="10,152,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
+        <GroupBox x:Name="grpBackup" Header="Backup existing profile" HorizontalAlignment="Left" Height="113" Margin="10,163,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="16*"/>
@@ -50,10 +52,10 @@
                 <ComboBox x:Name="cmbBoxBackupServo" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="151" Grid.ColumnSpan="2" Grid.Row="1"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Debug Messages" HorizontalAlignment="Left" Height="295" Margin="395,308,0,0" VerticalAlignment="Top" Width="508" Grid.ColumnSpan="2">
+        <GroupBox Header="Debug Messages" HorizontalAlignment="Left" Height="245" Margin="395,444,0,0" VerticalAlignment="Top" Width="776" Grid.ColumnSpan="2">
             <ListBox x:Name="debugBox" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </GroupBox>
-        <GroupBox x:Name="grpTransfer" Header="Transfer profiles to servos" HorizontalAlignment="Left" Height="333" Margin="10,270,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
+        <GroupBox x:Name="grpTransfer" Header="Transfer profiles to servos" HorizontalAlignment="Left" Height="408" Margin="10,281,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="4*"/>
@@ -93,16 +95,14 @@
             </Grid>
         </GroupBox>
         <Label x:Name="modBusExtensionTitle" Content="ModBus Extension" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" FontSize="24"/>
-        <GroupBox Header="Live Data Manipulation" HorizontalAlignment="Left" Height="247" Margin="395,56,0,0" VerticalAlignment="Top" Width="506" Grid.ColumnSpan="2">
+        <GroupBox x:Name="grpLiveDataManipulation" Header="Live Data Manipulation" HorizontalAlignment="Left" Height="372" Margin="395,67,0,0" VerticalAlignment="Top" Width="776" Grid.ColumnSpan="2">
+
             <Grid>
-                <Label x:Name="rpmLabel" Content="Max RPM (Pn051):" HorizontalAlignment="Left" Margin="202,9,0,0" VerticalAlignment="Top"/>
-                <TextBox x:Name="txtBoxRpm" VerticalContentAlignment="Center" Text="{Binding ElementName=rpmSlider, Path=Value, UpdateSourceTrigger=PropertyChanged}" DockPanel.Dock="Right" TextAlignment="Right" Margin="384,40,66,154" />
-                <Slider x:Name="rpmSlider" IsSnapToTickEnabled="True" Maximum="3000" TickPlacement="Both" TickFrequency="100" DockPanel.Dock="Left" HorizontalAlignment="Left" Margin="202,40,0,0" VerticalAlignment="Top" Width="177"/>
-                <ListBox x:Name="listBoxManipulationServos" Margin="10,40,333,0"
-                    VerticalAlignment="Top"
-                    SelectionMode="Multiple" Height="170"
-                    SelectionChanged="ListBoxManipulationServos_OnSelectionChanged"
-                    >
+                <ListBox x:Name="listBoxManipulationServos" Margin="10,36,0,0"
+                         VerticalAlignment="Top"
+                         SelectionMode="Multiple" Height="175"
+                         SelectionChanged="ListBoxManipulationServos_OnSelectionChanged" HorizontalAlignment="Left" Width="151"
+                >
                     <ListBox.Resources>
                         <Style TargetType="{x:Type ListBoxItem}">
                             <Setter Property="OverridesDefaultStyle" Value="true" />
@@ -111,7 +111,7 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="{x:Type ListBoxItem}">
                                         <CheckBox Margin="5,2"
-                                            IsChecked="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                                  IsChecked="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
                                             <ContentPresenter />
                                         </CheckBox>
                                     </ControlTemplate>
@@ -121,8 +121,14 @@
                     </ListBox.Resources>
                 </ListBox>
                 <Label Content="Choose servos:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="180"/>
-                <Button x:Name="btnSetRpm" Content="Set" HorizontalAlignment="Left" Margin="433,40,0,0" VerticalAlignment="Top" Width="51" Height="30" Click="btnSetRpm_Click"/>
+                <Border Margin="176,36,10,10" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveBorderBrushKey}}" BorderThickness="1">
+                    <ScrollViewer x:Name="propertyScrollViewer" HorizontalAlignment="Stretch" Height="auto" VerticalAlignment="Stretch" Width="auto" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionTextBrushKey}}">
+                        <StackPanel x:Name="propertySliderStackPanel" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+                    </ScrollViewer>
+                </Border>
+                <Label Content="Parameters:" HorizontalAlignment="Left" Margin="176,10,0,0" VerticalAlignment="Top" Width="180"/>
             </Grid>
         </GroupBox>
+        <TextBlock HorizontalAlignment="Left" Margin="10,42,0,0" VerticalAlignment="Top"><Hyperlink NavigateUri="https://github.com/ashupp/SFX-100-Modbus" RequestNavigate="Hyperlink_OnRequestNavigate" ><Run Text="https://github.com/ashupp/SFX-100-Modbus"/></Hyperlink></TextBlock>
     </Grid>
 </UserControl>

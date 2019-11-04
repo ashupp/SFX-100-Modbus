@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
@@ -8,11 +9,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Navigation;
 using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Serialization;
 using sfx_100_modbus_gui;
 using sfx_100_modbus_lib;
+using sfx_100_modbus_sfb_extension.Properties;
 
 namespace sfx_100_modbus_sfb_extension
 {
@@ -28,7 +31,8 @@ namespace sfx_100_modbus_sfb_extension
         {
             InitializeComponent();
 
-            servoProfilesPath = getServoProfilesPath();
+            _servoProfilesPath = getServoProfilesPath();
+            _servoParametersFile = getServoParametersPath();
             modBusExtensionTitle.Content = modBusExtensionTitle.Content + " - " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
 
             DataContext = this;
@@ -40,14 +44,21 @@ namespace sfx_100_modbus_sfb_extension
         #region Members
 
         /// <summary>
-        /// Settings
-        /// </summary>
-        private ModBusExtensionConfig _settings = new ModBusExtensionConfig();
-
-        /// <summary>
         /// Path containing servo profiles
         /// </summary>
-        private string servoProfilesPath;
+        private string _servoProfilesPath;
+
+        /// <summary>
+        /// Path containing servo parameters file
+        /// </summary>
+        private string _servoParametersFile;
+
+        private Dictionary<int, PropertySliderControl> _propertySliderControlsList;
+
+        /// <summary>
+        /// Contains the possible servo configuration parameters
+        /// </summary>
+        private ServoConfigurationParameters _servoConfigurationParameters;
 
         /// <summary>
         /// Dictionary containing available profiles in profile directory
@@ -73,15 +84,38 @@ namespace sfx_100_modbus_sfb_extension
         #region Private methods
 
         /// <summary>
+        /// Loads servo parameters file
+        /// </summary>
+        /// <returns></returns>
+        private void LoadServoParameters()
+        {
+            Log("Loading servo parameters from Path: " + _servoParametersFile);
+            XmlSerializer xmlProfileSerializer = new XmlSerializer(typeof(ServoConfigurationParameters));
+            try
+            {
+                using (var reader = new FileStream(_servoParametersFile, FileMode.Open))
+                {
+                    _servoConfigurationParameters = (ServoConfigurationParameters)xmlProfileSerializer.Deserialize(reader);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Log("Error during loading of servo parameters file: " + e.Message);
+            }
+
+        }
+
+        /// <summary>
         /// Loads available xml based servo profiles from applications subdirectory (servo-profiles)
         /// </summary>
         private void LoadAvailableProfiles()
         {
             Log("loadAvailableProfiles");
 
-            if (Directory.Exists(servoProfilesPath))
+            if (Directory.Exists(_servoProfilesPath))
             {
-                var foundServoProfiles = Directory.GetFiles(servoProfilesPath, "*.xml");
+                var foundServoProfiles = Directory.GetFiles(_servoProfilesPath, "*.xml");
                 listServoProfiles.Items.Clear();
                 _profileFilesAvailable = new Dictionary<string, string>();
                 // TODO: Maybe read an profile name set inside the xml file instead of file name. Checks also integrity of File through Deserialisation
@@ -92,14 +126,14 @@ namespace sfx_100_modbus_sfb_extension
                     listServoProfiles.Items.Add(shortProfileName);
                 }
 
-                Log("servo-profile path and files loaded. Path: " + servoProfilesPath);
+                Log("servo-profile path and files loaded. Path: " + _servoProfilesPath);
             }
             else
             {
-                Log("servo-profile path not available - try to create path: " + servoProfilesPath);
+                Log("servo-profile path not available - try to create path: " + _servoProfilesPath);
                 try
                 {
-                    Directory.CreateDirectory(servoProfilesPath);
+                    Directory.CreateDirectory(_servoProfilesPath);
                     Log("servo-profile path created");
                 }
                 catch (Exception ex)
@@ -107,7 +141,6 @@ namespace sfx_100_modbus_sfb_extension
                     Log("Error during creation of Servo profiles directory. " + ex.Message);
                 }
             }
-
         }
 
         /// <summary>
@@ -120,26 +153,60 @@ namespace sfx_100_modbus_sfb_extension
             ModBusConfiguration tmpConfig = new ModBusConfiguration
             {
                 PortName = portName,
-                DataBits = _settings.comOptionsDataBits,
-                Parity = _settings.comOptionsParity,
-                StopBits = _settings.comOptionsStopBits,
-                Speed = _settings.comOptionsSpeed,
-                ConnectionTimeout = _settings.servoQueryTimeout
+                DataBits = Settings.Default.comOptionsDataBits,
+                Parity = Settings.Default.comOptionsParity,
+                StopBits = Settings.Default.comOptionsStopBits,
+                Speed = Settings.Default.comOptionsSpeed,
+                ConnectionTimeout = Settings.Default.servoQueryTimeout
             };
             if (_modBusWrapper.Connect(tmpConfig))
             {
                 // Remember current Port by writing to Settings
-                _settings.comOptionsLastConnectedPort = portName;
-
+                Settings.Default.comOptionsLastConnectedPort = portName;
+                Settings.Default.Save();
                 btnConnect.IsEnabled = false;
                 btnDisconnect.IsEnabled = true;
                 Log("Connected");
                 SearchServos();
+                AddSliders();
             }
             else
             {
                 Log("Error: Could not connect to port: " + portName);
             }
+        }
+
+        /// <summary>
+        /// Generates Sliders Bases on the _propertySliderControlsList
+        /// </summary>
+        private void AddSliders()
+        {
+            
+            _propertySliderControlsList = new Dictionary<int, PropertySliderControl>();
+            propertySliderStackPanel.Children.Clear();
+
+            foreach (var servoConfigurationParameter in _servoConfigurationParameters.Parameters)
+            {
+                var tmpSliderControl = new PropertySliderControl
+                {
+                    Key = servoConfigurationParameter.Key,
+                    PName = servoConfigurationParameter.Name,
+                    Description = servoConfigurationParameter.Description,
+                    MinValue = servoConfigurationParameter.Min,
+                    MaxValue = servoConfigurationParameter.Max,
+                    DefaultValue = servoConfigurationParameter.Default,
+                    IsEnabled = false
+                };
+                //tmpSliderControl.CurrentValue = servoConfigurationParameter;
+                tmpSliderControl.SetValueClicked += ServoParameter_SetValueClicked;
+                tmpSliderControl.DefaultValueClicked += ServoParameter_DefaultValueClicked;
+
+                propertySliderStackPanel.Children.Add(tmpSliderControl);
+                propertySliderStackPanel.Children.Add(new Separator());
+                
+                _propertySliderControlsList.Add(servoConfigurationParameter.Key, tmpSliderControl);
+            }
+            grpLiveDataManipulation.IsEnabled = true;
         }
 
         /// <summary>
@@ -154,6 +221,7 @@ namespace sfx_100_modbus_sfb_extension
             btnDisconnect.IsEnabled = false;
             grpBackup.IsEnabled = false;
             grpTransfer.IsEnabled = false;
+            grpLiveDataManipulation.IsEnabled = false;
         }
 
         /// <summary>
@@ -164,7 +232,7 @@ namespace sfx_100_modbus_sfb_extension
             Log("searching servos - please wait");
 
             ModBusExtensionControlGuiElement.IsEnabled = false;
-            AvailableServoIds = await Task.Run((() => _modBusWrapper.SearchServos(_settings.maxServoId)));
+            AvailableServoIds = await Task.Run((() => _modBusWrapper.SearchServos(Settings.Default.maxServoId)));
             ModBusExtensionControlGuiElement.IsEnabled = true;
 
             RePopulateLists();
@@ -236,7 +304,7 @@ namespace sfx_100_modbus_sfb_extension
                     xmlProfileSerializer.Serialize(writer, tmpSet);
                     var xml = sww.ToString();
 
-                    var profilePath = Path.Combine(servoProfilesPath, profileName + ".xml");
+                    var profilePath = Path.Combine(_servoProfilesPath, profileName + ".xml");
                     File.WriteAllText(profilePath, xml);
                     Log("profile saved: " + profilePath);
                 }
@@ -288,64 +356,78 @@ namespace sfx_100_modbus_sfb_extension
         }
 
         /// <summary>
-        /// Sets the RPM value of drives
+        /// Loads live Parameters from all selected servos and try to match them to the sliders
+        /// If values are not equal, the according slider will be deactivated
         /// </summary>
-        /// <param name="value">max RPM</param>
-        private void SetRpm(int value)
+        private void ReloadParameterDataOfSelectedServos()
         {
-            Log("Setting RPM to: " + value);
-            var valueToSet = Convert.ToInt32(value);
+            Log("Live Data: Selection of servos changed, refreshing data");
 
-            if (valueToSet >= 0 && valueToSet <= 3000)
-            {
-                foreach (int servoId in listBoxManipulationServos.SelectedItems)
-                {
-                    _modBusWrapper.WriteValueToServo(servoId, 51, valueToSet);
-                    Log("RPM: Value: " + valueToSet + " written to servo: " + servoId);
-                    var checkValue = _modBusWrapper.ReadValueFromServo(servoId, 51);
-                    Log("RPM: Value Check - Got: " + checkValue + " from servo: " + servoId);
-                }
-            }
-            else
-            {
-                Log("RPM: Invalid Value: " + value);
-            }
-        }
+            // Leeres Dictionary erzeugen
 
-        /// <summary>
-        /// Checks the current RPM on selected servos.
-        /// Sets the slider to the current value if all selected servos have the same value
-        /// Sets the slider to 3000 if the selected servos have different values
-        /// </summary>
-        private void ReadCurrentRpmOfSelectedServos()
-        {
-            Log("Selection of live servos changed");
+            // Todo: Refactor Method from Hell :)
 
-            List<int> currentValues = new List<int>();
+            Dictionary<int, List<int>> currentValues = new Dictionary<int, List<int>>();
 
+            // Gewählte Servos identifizieren
             Array servosArray = listBoxManipulationServos.SelectedItems.Cast<int>().ToArray();
 
-            foreach (int servoId in servosArray)
+            bool disabledSlider = false;
+
+            // Alle geladenen Parameter durchgehen
+            foreach (var servoConfigurationParameter in _servoConfigurationParameters.Parameters)
             {
-                var currentRpm = _modBusWrapper.ReadValueFromServo(servoId, 51);
-                currentValues.Add(currentRpm);
-                Log("RPM: Servo select current value: " + currentRpm + " on servo: " + servoId);
+                if (servosArray.Length > 0)
+                {
+                    currentValues[servoConfigurationParameter.Key] = new List<int>();
+
+                    // Alle gewählten Servos durchgehen
+                    foreach (int servoId in servosArray)
+                    {
+
+                        // Auslesen und ablegen
+                        var currentValue = _modBusWrapper.ReadValueFromServo(servoId, servoConfigurationParameter.Key);
+                        currentValues[servoConfigurationParameter.Key].Add(currentValue);
+                    }
+
+                    // Direkt entsprechenden Slider Aktivieren/Deaktivieren wenn alle Values für gewählte Drives gleich sind.
+                    if (currentValues[servoConfigurationParameter.Key]
+                        .All(x => x == currentValues[servoConfigurationParameter.Key].First()))
+                    {
+                        // Enable Slider
+                        try
+                        {
+                            _propertySliderControlsList[servoConfigurationParameter.Key].IsEnabled = true;
+                            _propertySliderControlsList[servoConfigurationParameter.Key].CurrentValue =
+                                currentValues[servoConfigurationParameter.Key].First();
+                        }
+                        catch (Exception e)
+                        {
+                            Log("Critical Error during setting of slider value: " + e.Message);
+                            throw;
+                        }
+
+                    }
+                    else
+                    {
+                        // Disable Slider
+                        disabledSlider = true;
+                        _propertySliderControlsList[servoConfigurationParameter.Key].IsEnabled = false;
+                    }
+                }
+                else
+                {
+                    _propertySliderControlsList[servoConfigurationParameter.Key].IsEnabled = false;
+                }
+
             }
 
-            if (currentValues.All(x => x == currentValues.First()))
+            if (disabledSlider)
             {
-                Log("RPM change: Values of all selected servos are the same: " + currentValues.First());
-                rpmSlider.Value = currentValues.First();
-                rpmSlider.IsEnabled = true;
-                txtBoxRpm.IsEnabled = true;
-            }
-            else
-            {
-                Log("Warning: RPM change: Values of selected servos are not equal. Please check and correct.");
-                rpmSlider.IsEnabled = false;
-                txtBoxRpm.IsEnabled = false;
+                Log("Info: At least one value of selected servos is not equal. Disabled corresponding sliders.");
             }
         }
+
 
         #endregion
 
@@ -363,6 +445,16 @@ namespace sfx_100_modbus_sfb_extension
         }
 
         /// <summary>
+        /// Returns the path to servo properties file
+        /// </summary>
+        /// <returns></returns>
+        private string getServoParametersPath()
+        {
+            var currentDirectory = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? throw new InvalidOperationException(), "servo-parameters", "sfx-100-parameters.xml");
+            return currentDirectory;
+        }
+
+        /// <summary>
         /// Simple logging to window. Holds only limited entries to prevent scrolling
         /// </summary>
         /// <param name="logEntry">Object to log</param>
@@ -372,7 +464,7 @@ namespace sfx_100_modbus_sfb_extension
                 DispatcherPriority.Normal,
                 new Action(() =>
                 {
-                    if (debugBox.Items.Count >= 36)
+                    if (debugBox.Items.Count >= 250)
                     {
                         debugBox.Items.RemoveAt(0);
                     }
@@ -412,7 +504,35 @@ namespace sfx_100_modbus_sfb_extension
         #endregion
 
         #region Eventhandlers
-        
+
+        /// <summary>
+        /// Eventhandler called when controlis loaded.
+        /// Loads profiles, serial ports and tries to connect automatically - if set.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ModBusExtensionControlGUI_OnLoaded(object sender, RoutedEventArgs e)
+        {
+            LoadAvailableProfiles();
+            LoadServoParameters();
+
+            try
+            {
+                LoadAvailableSerialPorts();
+                comOptionsPort.SelectedValue = Settings.Default.comOptionsLastConnectedPort;
+
+                if (Settings.Default.comOptionsAutoConnectOnStartup && comOptionsPort.SelectedValue != null)
+                {
+                    Log("Try to connect automatically to: " + comOptionsPort.SelectedValue);
+                    Connect();
+                }
+            }
+            catch (Exception)
+            {
+                Log("Warning: Could not set last connected Port (not found)");
+            }
+        }
+
         /// <summary>
         /// Eventhandler is called when refresh serial ports is clicked
         /// </summary>
@@ -498,35 +618,65 @@ namespace sfx_100_modbus_sfb_extension
         /// <param name="e"></param>
         private void ListBoxManipulationServos_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            ReadCurrentRpmOfSelectedServos();
+            //ReadCurrentRpmOfSelectedServos();
+            ReloadParameterDataOfSelectedServos();
+
         }
 
         /// <summary>
-        /// Eventhandler called when controlis loaded.
-        /// Loads profiles, serial ports and tries to connect automatically - if set.
+        /// Writes a slider value to selected servos
+        /// </summary>
+        /// <param name="currentSlider"></param>
+        /// <param name="e"></param>
+        private void WriteSliderValueToSelectedServos(PropertySliderControl currentSlider, KeyValueEventArgs e)
+        {
+            // Todo: Could use sliderControl instead on searching for param definition
+
+            if (e.Value >= currentSlider.MinValue && e.Value <= currentSlider.MaxValue)
+            {
+                foreach (int servoId in listBoxManipulationServos.SelectedItems)
+                {
+                    _modBusWrapper.WriteValueToServo(servoId, e.Key, e.Value);
+                    Log("Value: " + e.Value + " written to servo: " + servoId);
+                    var checkValue = _modBusWrapper.ReadValueFromServo(servoId, e.Key);
+                    Log("Value Check - Got: " + checkValue + " from servo: " + servoId);
+                }
+            }
+            else
+            {
+                Log("Invalid Value: " + e.Value + " - Allowed Min/Max: " + currentSlider.MinValue + " - " + currentSlider.MaxValue);
+            }
+        }
+
+        /// <summary>
+        /// Eventhandler launched when click set on an property slider control
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ModBusExtensionControlGUI_OnLoaded(object sender, RoutedEventArgs e)
-        {
-            LoadAvailableProfiles();
-
-            try
+        private void ServoParameter_SetValueClicked(object sender, KeyValueEventArgs e) {
+            var sliderControl = sender as PropertySliderControl;
+            if (sliderControl != null)
             {
-                LoadAvailableSerialPorts();
-                comOptionsPort.SelectedValue = _settings.comOptionsLastConnectedPort;
-
-                if (_settings.comOptionsAutoConnectOnStartup && comOptionsPort.SelectedValue != null)
-                {
-                    Log("Try to connect automatically to: " + comOptionsPort.SelectedValue);
-                    Connect();
-                }
-            }
-            catch (Exception)
-            {
-                Log("Warning: Could not set last connected Port (not found)");
+                Log("Clicked set value: " + sliderControl.PName + "(" + sliderControl.Key + ") -- " + e.Value);
+                WriteSliderValueToSelectedServos(sliderControl, e);
             }
         }
+
+        /// <summary>
+        /// Eventhandler launched when click reset on an property slider control
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ServoParameter_DefaultValueClicked(object sender, KeyValueEventArgs e)
+        {
+            var sliderControl = sender as PropertySliderControl;
+            if (sliderControl != null)
+            {
+                Log("Clicked reset value: " + sliderControl.PName + "(" + sliderControl.Key + ") -- " + e.Value);
+                WriteSliderValueToSelectedServos(sliderControl,e);
+            }
+        }
+
 
         /// <summary>
         /// Disconnect when UI is unloaded
@@ -536,16 +686,18 @@ namespace sfx_100_modbus_sfb_extension
         private void ModBusExtensionControlGUI_OnUnloaded(object sender, RoutedEventArgs e)
         {
             Disconnect();
+            Settings.Default.Save();
         }
 
         /// <summary>
-        /// Eventhandler, called when clicked on Set RPM
+        /// Eventhandler launched when Project URI is clicked
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void btnSetRpm_Click(object sender, RoutedEventArgs e)
+        private void Hyperlink_OnRequestNavigate(object sender, RequestNavigateEventArgs e)
         {
-            SetRpm(Convert.ToInt32(rpmSlider.Value));
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
+            e.Handled = true;
         }
 
         #endregion

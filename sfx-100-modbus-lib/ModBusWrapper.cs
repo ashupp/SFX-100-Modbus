@@ -98,7 +98,7 @@ namespace sfx_100_modbus_lib
         /// <returns></returns>
         public int ReadValueFromServo(int servoId, int address)
         {
-            SetServoId(servoId);
+            SetServoId(servoId); 
             return ReadValueFromServo(address);
         }
 
@@ -125,6 +125,7 @@ namespace sfx_100_modbus_lib
         /// <summary>
         /// Writes a single value to a given servo
         /// </summary>
+        /// <param name="servoId">Id of the servo</param>
         /// <param name="address">Adress to write</param>
         /// <param name="value">value to write</param>
         /// <returns>true/false</returns>
@@ -135,7 +136,7 @@ namespace sfx_100_modbus_lib
         }
 
         /// <summary>
-        /// Writes a single value to servo
+        /// Writes a single value to servo.
         /// </summary>
         /// <param name="address">Adress to write</param>
         /// <param name="value">value to write</param>
@@ -144,8 +145,12 @@ namespace sfx_100_modbus_lib
         {
             try
             {
-                _modbusClient.WriteSingleRegister(address, value);
-                Thread.Sleep(6);
+                // Only write if value is different to current value. Try to write same value triggers no error tough.
+                if (ReadValueFromServo(address) != value)
+                {
+                    _modbusClient.WriteSingleRegister(address, value);
+                    Thread.Sleep(6);
+                }
                 return true;
             }
             catch (Exception e)

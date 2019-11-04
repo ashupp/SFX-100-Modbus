@@ -82,10 +82,5 @@ namespace sfx_100_modbus_sfb_extension
         {
             Stop();
         }
-
-        private void elementHost_ChildChanged(object sender, System.Windows.Forms.Integration.ChildChangedEventArgs e)
-        {
-
-        }
     }
 }

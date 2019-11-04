@@ -124,6 +124,7 @@ namespace sfx_100_modbus_gui
             {
                 // Remember current Port by writing to Settings
                 Settings.Default.comOptionsLastConnectedPort = portName;
+                Settings.Default.Save();
 
                 btnConnect.IsEnabled = false;
                 btnDisconnect.IsEnabled = true;
@@ -447,10 +448,7 @@ namespace sfx_100_modbus_gui
         /// <param name="e"></param>
         private void MainWindow_OnClosing(object sender, CancelEventArgs e)
         {
-            if (_modBusWrapper.IsConnected)
-            {
-                Disconnect();
-            }
+            Disconnect();
             Settings.Default.Save();
         }
 

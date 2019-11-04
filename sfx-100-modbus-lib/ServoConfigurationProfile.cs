@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Xml.Serialization;
-using System.Xml.XPath;
 
 namespace sfx_100_modbus_lib
 {

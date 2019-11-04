@@ -37,6 +37,7 @@
       <HintPath>lib\SimFeedbackExtension.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
@@ -56,7 +57,6 @@
       <Link>StringWriterWithEncoding.cs</Link>
     </Compile>
     <Compile Include="ModBusExtension.cs" />
-    <Compile Include="ModBusExtensionConfig.cs" />
     <Compile Include="ModBusExtensionControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -67,6 +67,15 @@
       <DependentUpon>ModBusExtensionControlGui.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Include="PropertySliderControl.xaml.cs">
+      <DependentUpon>PropertySliderControl.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ModBusExtensionControl.resx">
@@ -84,14 +93,30 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="PropertySliderControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\sfx-100-modbus-gui\servo-parameters\sfx-100-parameters.xml">
+      <Link>servo-parameters\sfx-100-parameters.xml</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\sfx-100-modbus-gui\servo-profiles\sfx-100-default.xml">
       <Link>servo-profiles\sfx-100-default.xml</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="..\sfx-100-modbus-gui\servo-profiles\sfx-100-reduced-speed.xml">
       <Link>servo-profiles\sfx-100-reduced-speed.xml</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <Content Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

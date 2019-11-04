@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SimFeedback.extension;
+﻿using SimFeedback.extension;
 using System.Windows.Forms;
 
 namespace sfx_100_modbus_sfb_extension
 {
     public class ModBusExtension : AbstractSimFeedbackExtension
     {
-        private ModBusExtensionControl extCtrl;
-        public ModBusExtensionConfig extCfg;
+        private ModBusExtensionControl _extCtrl;
 
         public ModBusExtension()
         {
@@ -27,18 +21,7 @@ namespace sfx_100_modbus_sfb_extension
         {
             base.Init(facade, config);
             Log("Initialize ModBus Extension");
-
-            LogDebug("ModBusExtension: Reading Config");
-            extCfg = (ModBusExtensionConfig)config.CustomConfig;
-            if (extCfg == null)
-            {
-                LogDebug("FanatecExtension: No Config found, creating new config");
-            }
-            config.CustomConfig = extCfg;
-
-            facade.SaveConfig();
-
-            extCtrl = new ModBusExtensionControl(this, facade);
+            _extCtrl = new ModBusExtensionControl(this, facade);
         }
 
         public void SetIsRunning(bool status)
@@ -50,7 +33,7 @@ namespace sfx_100_modbus_sfb_extension
         {
             if (IsRunning) return;
             SimFeedbackFacade.Log("Starting ModBus Extension");
-            extCtrl.Start();
+            _extCtrl.Start();
             IsRunning = true;
         }
 
@@ -58,10 +41,10 @@ namespace sfx_100_modbus_sfb_extension
         {
             if (!IsRunning) return;
             Log("Stopping ModBus Extension");
-            extCtrl.Stop();
+            _extCtrl.Stop();
             IsRunning = false;
         }
 
-        public override Control ExtensionControl => extCtrl;
+        public override Control ExtensionControl => _extCtrl;
     }
 }
