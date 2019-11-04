@@ -241,7 +241,7 @@ namespace sfx_100_modbus_lib
             var currentPersistState = ReadValueFromServo(81);
             if (currentPersistState == 0)
             {
-                //WriteValueToServo(81, 1);
+                WriteValueToServo(81, 1);
             }
             else
             {
@@ -249,7 +249,7 @@ namespace sfx_100_modbus_lib
                 {
 
                 }
-                //WriteValueToServo(81, 1);
+                WriteValueToServo(81, 1);
             }
             // We have to wait until saving is complete
             Thread.Sleep(5000);
