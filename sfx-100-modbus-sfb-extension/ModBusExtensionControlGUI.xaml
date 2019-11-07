@@ -149,10 +149,11 @@
                 </Border>
                 <Label Content="Parameters:" HorizontalAlignment="Left" Margin="176,5,0,0" VerticalAlignment="Top" Width="180"/>
                 <Button IsEnabled="{Binding ElementName=listBoxManipulationServos, Path=SelectedItems.Count}" x:Name="btnSavePermanent" Content="Save permanently" HorizontalAlignment="Left" Margin="10,387,0,0" VerticalAlignment="Top" Width="158" Height="24" Click="btnSavePermanent_Click"/>
-                <TextBox BorderThickness="0" HorizontalAlignment="Left" Margin="10,236,0,0" TextWrapping="Wrap" Text="Attention: 
+                <TextBox BorderThickness="0" HorizontalAlignment="Left" Margin="10,193,0,0" TextWrapping="Wrap" Text="Attention: 
                            All parameters will be reverted after power-cycle of the servo. Hit the button below to write the data to servo driver memory. 
                            Try not to save often as EEPROM-Memory wears out." VerticalAlignment="Top" Height="146" Width="158"/>
                 <Button ToolTip="Refresh Parameters" Content="🗘" HorizontalAlignment="Left" Margin="758,4,0,0" VerticalAlignment="Top" Width="25" Height="22" Click="BtnParametersRefresh" RenderTransformOrigin="0.68,0.273"/>
+                <Button x:Name="btnTransferAllAtOnce" IsEnabled="{Binding ElementName=listBoxManipulationServos, Path=SelectedItems.Count}" Content="Transfer all at once" HorizontalAlignment="Left" Margin="10,358,0,0" VerticalAlignment="Top" Width="158" Height="24" Click="BtnTransferAllAtOnce_OnClick" RenderTransformOrigin="0.65,0.545" />
 
             </Grid>
         </GroupBox>

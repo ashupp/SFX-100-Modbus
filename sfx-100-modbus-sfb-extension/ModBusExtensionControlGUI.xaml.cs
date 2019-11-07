@@ -283,6 +283,8 @@ namespace sfx_100_modbus_sfb_extension
                 await Task.Run(() => SavePermanent(servosArray));
             }
 
+            ReloadParameterDataOfSelectedServos();
+
             ModBusExtensionControlGuiElement.IsEnabled = true;
         }
 
@@ -435,6 +437,7 @@ namespace sfx_100_modbus_sfb_extension
                         try
                         {
                             _propertySliderControlsList[servoConfigurationParameter.Key].IsEnabled = true;
+                            _propertySliderControlsList[servoConfigurationParameter.Key].Tag = "equal";
                             _propertySliderControlsList[servoConfigurationParameter.Key].CurrentValue =
                                 currentValues[servoConfigurationParameter.Key].First();
                         }
@@ -450,6 +453,7 @@ namespace sfx_100_modbus_sfb_extension
                         // Disable Slider
                         disabledSlider = true;
                         _propertySliderControlsList[servoConfigurationParameter.Key].IsEnabled = false;
+                        _propertySliderControlsList[servoConfigurationParameter.Key].Tag = "non-equal";
                     }
                 }
                 else
@@ -494,9 +498,41 @@ namespace sfx_100_modbus_sfb_extension
                 catch (Exception exception)
                 {
                     Log("Exception during write of parameters to EEPROM" + exception.Message);
-                    throw;
                 }
                 return true;
+        }
+
+        /// <summary>
+        /// Writes all Slider parameters to selected Servos
+        /// </summary>
+        private void TransferAllParametersToSelectedServos()
+        {
+            Log("Live Data: Transfer all parameters at once");
+            Dispatcher?.BeginInvoke(
+                DispatcherPriority.Normal,
+                new Action(() =>
+                {
+                    
+                    foreach (var propertySlider in _propertySliderControlsList)
+                    {
+                        if ((string) propertySlider.Value.Tag != "non-equal")
+                        {
+                            Log("Live Data: Transferring Key: " + propertySlider.Value.Key + " - Value: " +
+                                propertySlider.Value.CurrentValue);
+                            var args = new KeyValueEventArgs()
+                            {
+                                Key = propertySlider.Value.Key,
+                                Value = propertySlider.Value.CurrentValue
+                            };
+                            WriteSliderValueToSelectedServos(propertySlider.Value, args);
+                        }
+                        else
+                        {
+                            Log("Live Data: Omitting non-equal Key: " + propertySlider.Value.Key + " - Value: " +
+                                propertySlider.Value.CurrentValue);
+                        }
+                    }
+                }));
         }
 
         #endregion
@@ -561,8 +597,8 @@ namespace sfx_100_modbus_sfb_extension
         /// <param name="logEntry">Object to log</param>
         private void Log(object logEntry)
         {
-            Dispatcher?.BeginInvoke(
-                DispatcherPriority.Normal,
+          Dispatcher?.BeginInvoke(
+                DispatcherPriority.Normal,  
                 new Action(() =>
                 {
                     if (debugBox.Items.Count >= 250)
@@ -727,7 +763,6 @@ namespace sfx_100_modbus_sfb_extension
         private void BtnTransferProfile(object sender, RoutedEventArgs e)
         {
             TransferProfile(false);
-            ReloadParameterDataOfSelectedServos();
         }
 
         /// <summary>
@@ -741,7 +776,6 @@ namespace sfx_100_modbus_sfb_extension
             if (messageBoxResult == MessageBoxResult.Yes)
             {
                 TransferProfile(true);
-                ReloadParameterDataOfSelectedServos();
             }
         }
 
@@ -764,16 +798,20 @@ namespace sfx_100_modbus_sfb_extension
         /// <param name="e"></param>
         private void WriteSliderValueToSelectedServos(PropertySliderControl currentSlider, KeyValueEventArgs e)
         {
-            // Todo: Could use sliderControl instead on searching for param definition
-
+            // Todo: No KeyValueEvents args needed here, since currentValue holds e.Value and Key is available too
             if (e.Value >= currentSlider.MinValue && e.Value <= currentSlider.MaxValue)
             {
                 foreach (int servoId in listBoxManipulationServos.SelectedItems)
                 {
-                    _modBusWrapper.WriteValueToServo(servoId, e.Key, e.Value);
-                    Log("Value: " + e.Value + " written to servo: " + servoId);
-                    var checkValue = _modBusWrapper.ReadValueFromServo(servoId, e.Key);
-                    Log("Value Check - Got: " + checkValue + " from servo: " + servoId);
+                    if (_modBusWrapper.WriteValueToServo(servoId, e.Key, e.Value))
+                    {
+                        Log("Slider Key: " + e.Key + " with Value: " + e.Value + " written to servo: " + servoId);
+                    }
+                    else
+                    {
+                        Log("Error: Slider Key: " + e.Key + " with Value: " + e.Value + " not written to servo: " + servoId);
+                    }
+                    
                 }
             }
             else
@@ -844,10 +882,10 @@ namespace sfx_100_modbus_sfb_extension
             MessageBoxResult messageBoxResult = MessageBox.Show("Do you really want to save current values to selected servos?", "Permanent save", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (messageBoxResult == MessageBoxResult.Yes)
             {
-                TransferProfile(true);
                 Array servosArray = listBoxManipulationServos.SelectedItems.Cast<int>().ToArray();
                 ModBusExtensionControlGuiElement.IsEnabled = false;
                 await Task.Run((() => SavePermanent(servosArray)));
+                ReloadParameterDataOfSelectedServos();
                 ModBusExtensionControlGuiElement.IsEnabled = true;
             }
         }
@@ -860,6 +898,19 @@ namespace sfx_100_modbus_sfb_extension
         private void CmbBoxBackupServo_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             btnSaveAsProfile.IsEnabled = Convert.ToInt32(cmbBoxBackupServo.SelectedValue) >= 1;
+        }
+
+        /// <summary>
+        /// Eventhandler called when clicking "Transfer all at once"
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void BtnTransferAllAtOnce_OnClick(object sender, RoutedEventArgs e)
+        {
+            ModBusExtensionControlGuiElement.IsEnabled = false;
+            await Task.Run(() => TransferAllParametersToSelectedServos());
+            ReloadParameterDataOfSelectedServos();
+            ModBusExtensionControlGuiElement.IsEnabled = true;
         }
 
         #endregion
