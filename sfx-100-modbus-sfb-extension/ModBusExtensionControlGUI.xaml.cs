@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Forms;
 using System.Windows.Navigation;
 using System.Windows.Threading;
 using System.Xml;
@@ -16,6 +17,7 @@ using System.Xml.Serialization;
 using sfx_100_modbus_gui;
 using sfx_100_modbus_lib;
 using sfx_100_modbus_sfb_extension.Properties;
+using MessageBox = System.Windows.MessageBox;
 
 namespace sfx_100_modbus_sfb_extension
 {
@@ -31,7 +33,7 @@ namespace sfx_100_modbus_sfb_extension
         {
             InitializeComponent();
 
-            _servoProfilesPath = getServoProfilesPath();
+            _servoProfilesPath = GetServoProfilesPath();
             _servoParametersFile = getServoParametersPath();
             modBusExtensionTitle.Content = modBusExtensionTitle.Content + " - " + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
 
@@ -103,7 +105,6 @@ namespace sfx_100_modbus_sfb_extension
                 Console.WriteLine(e);
                 Log("Error during loading of servo parameters file: " + e.Message);
             }
-
         }
 
         /// <summary>
@@ -111,7 +112,7 @@ namespace sfx_100_modbus_sfb_extension
         /// </summary>
         private void LoadAvailableProfiles()
         {
-            Log("loadAvailableProfiles");
+            Log("Loading available profiles...");
 
             if (Directory.Exists(_servoProfilesPath))
             {
@@ -130,17 +131,9 @@ namespace sfx_100_modbus_sfb_extension
             }
             else
             {
-                Log("servo-profile path not available - try to create path: " + _servoProfilesPath);
-                try
-                {
-                    Directory.CreateDirectory(_servoProfilesPath);
-                    Log("servo-profile path created");
-                }
-                catch (Exception ex)
-                {
-                    Log("Error during creation of Servo profiles directory. " + ex.Message);
-                }
+                Log("Warning: Current Directory does not exist - no profiles loaded: " + _servoProfilesPath);
             }
+
         }
 
         /// <summary>
@@ -221,6 +214,7 @@ namespace sfx_100_modbus_sfb_extension
             btnDisconnect.IsEnabled = false;
             grpBackup.IsEnabled = false;
             grpTransfer.IsEnabled = false;
+            btnSaveAsProfile.IsEnabled = false;
             grpLiveDataManipulation.IsEnabled = false;
             listBoxManipulationServos.ItemsSource = null;
             listBoxProfileServos.ItemsSource = null;
@@ -263,11 +257,33 @@ namespace sfx_100_modbus_sfb_extension
         /// Reads current parameters from servo and saves them to file 
         /// </summary>
         /// <param name="servoId">Id of servo</param>
-        private void BackupProfile(byte servoId)
+        /// <param name="filename"></param>
+        private void BackupProfile(byte servoId, string filename)
         {
             Log("backupProfile - servo Id: " + servoId);
             var values = _modBusWrapper.ReadData(Convert.ToByte(servoId), 0, 280);
-            SaveProfile(servoId, values, DateTime.Now.ToString("yyyyMMddHHmm") + "-" + servoId + "-backup");
+            SaveProfile(servoId, values, filename);
+        }
+
+        /// <summary>
+        /// Transfers profile to one or more servos
+        /// </summary>
+        /// <param name="savePermanent">save settings on servo permanently</param>
+        private async void TransferProfile(bool savePermanent)
+        {
+            Log("Transfer Profile: " + listServoProfiles.SelectedValue);
+
+            Array servosArray = listBoxProfileServos.SelectedItems.Cast<int>().ToArray();
+            var selectedProfile = _profileFilesAvailable[listServoProfiles.SelectedValue.ToString()];
+
+            ModBusExtensionControlGuiElement.IsEnabled = false;
+            await Task.Run(() => TransferProfile(selectedProfile, servosArray));
+            if (savePermanent)
+            {
+                await Task.Run(() => SavePermanent(servosArray));
+            }
+
+            ModBusExtensionControlGuiElement.IsEnabled = true;
         }
 
         /// <summary>
@@ -306,9 +322,8 @@ namespace sfx_100_modbus_sfb_extension
                     xmlProfileSerializer.Serialize(writer, tmpSet);
                     var xml = sww.ToString();
 
-                    var profilePath = Path.Combine(_servoProfilesPath, profileName + ".xml");
-                    File.WriteAllText(profilePath, xml);
-                    Log("profile saved: " + profilePath);
+                    File.WriteAllText(profileName, xml);
+                    Log("profile saved: " + profileName);
                 }
             }
         }
@@ -327,6 +342,29 @@ namespace sfx_100_modbus_sfb_extension
                 profile = (ServoConfigurationProfile) xmlProfileSerializer.Deserialize(reader);
             }
             return profile;
+        }
+
+        /// <summary>
+        /// Sets the default profiles folder
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnSetFolder(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new FolderBrowserDialog())
+            {
+                dialog.SelectedPath = _servoProfilesPath;
+                DialogResult result = dialog.ShowDialog();
+
+                if (result == DialogResult.OK)
+                {
+                    _servoProfilesPath = dialog.SelectedPath;
+                    Settings.Default.profilesPath = _servoProfilesPath;
+                    Settings.Default.Save();
+                    LoadAvailableProfiles();
+                }
+
+            }
         }
 
         /// <summary>
@@ -435,30 +473,30 @@ namespace sfx_100_modbus_sfb_extension
         private bool SavePermanent(Array servosArray)
         {
             Log("******** WRITING PARAMETERS TO EEPROM - PLEASE WAIT - TAKES 5 Seconds per SERVO ********");
-            try
-            {
-                if (servosArray.Length > 0)
+                try
                 {
-                    foreach (int servoId in servosArray)
+                    if (servosArray.Length > 0)
                     {
-                        Log("Write Parameters to EEPROM of servo: " + servoId);
-                        if (_modBusWrapper.PersistParametersToMemory(servoId))
+                        foreach (int servoId in servosArray)
                         {
-                            Log("Parameters written to EEPROM of servo:" + servoId);
-                        }
-                        else
-                        {
-                            Log("Error during write of parameters to EEPROM of servo: " + servoId);
+                            Log("Write Parameters to EEPROM of servo: " + servoId);
+                            if (_modBusWrapper.PersistParametersToMemory(servoId))
+                            {
+                                Log("Parameters written to EEPROM of servo:" + servoId);
+                            }
+                            else
+                            {
+                                Log("Error during write of parameters to EEPROM of servo: " + servoId);
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception exception)
-            {
-                Log("Exception during write of parameters to EEPROM" + exception.Message);
-                throw;
-            }
-            return true;
+                catch (Exception exception)
+                {
+                    Log("Exception during write of parameters to EEPROM" + exception.Message);
+                    throw;
+                }
+                return true;
         }
 
         #endregion
@@ -469,11 +507,42 @@ namespace sfx_100_modbus_sfb_extension
         /// Returns the servo profiles path
         /// </summary>
         /// <returns>Path of profiles</returns>
-        private string getServoProfilesPath()
+        private string GetServoProfilesPath()
         {
-            var currentDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? throw new ArgumentNullException(
-                                       $"Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)");
-            return Path.Combine(currentDirectory, "servo-profiles");
+            string profileDirectory;
+
+            if (Settings.Default.profilesPath != "")
+            {
+                profileDirectory = Settings.Default.profilesPath;
+            }
+            else
+            {
+
+                profileDirectory = Path.Combine(
+                    Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ??
+                    throw new ArgumentNullException(
+                        $"Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)"),
+                    "servo-profiles");
+                
+
+
+                if (!Directory.Exists(profileDirectory)) { 
+                    Log("servo-profile path not available - try to create path: " + _servoProfilesPath);
+                    try
+                    {
+                        Directory.CreateDirectory(_servoProfilesPath);
+                        Log("servo-profile path created");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("Error during creation of Servo profiles directory. " + ex.Message);
+                    }
+                }
+                Settings.Default.profilesPath = profileDirectory;
+                Settings.Default.Save();
+
+            }
+            return profileDirectory;
         }
 
         /// <summary>
@@ -513,6 +582,7 @@ namespace sfx_100_modbus_sfb_extension
         private void RePopulateLists()
         {
             // Todo: Maybe WPF Binding instead of this
+
             listBoxProfileServos.ItemsSource = AvailableServoIds;
             cmbBoxBackupServo.ItemsSource = AvailableServoIds;
             listBoxManipulationServos.ItemsSource = AvailableServoIds;
@@ -603,10 +673,30 @@ namespace sfx_100_modbus_sfb_extension
         private async void BtnBackupAsProfile(object sender, RoutedEventArgs e)
         {
             var selectedServo = Convert.ToByte(cmbBoxBackupServo.SelectedValue);
-            ModBusExtensionControlGuiElement.IsEnabled = false;
-            await Task.Run(() => BackupProfile(selectedServo));
-            LoadAvailableProfiles();
-            ModBusExtensionControlGuiElement.IsEnabled = true;
+
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                FileName = DateTime.Now.ToString("yyyyMMddHHmm") + "-" + selectedServo + "-backup",
+                DefaultExt = ".xml",
+                Filter = "SFX-100 servo profiles (.xml)|*.xml",
+                InitialDirectory = _servoProfilesPath,
+                RestoreDirectory = false
+                
+            };
+
+            var result = dlg.ShowDialog();
+
+            if (result == true)
+            {
+                // Save document
+                string filename = dlg.FileName;
+                ModBusExtensionControlGuiElement.IsEnabled = false;
+                await Task.Run(() => BackupProfile(selectedServo, filename));
+                LoadAvailableProfiles();
+                ModBusExtensionControlGuiElement.IsEnabled = true;
+            }
+
+
         }
 
         /// <summary>
@@ -634,23 +724,24 @@ namespace sfx_100_modbus_sfb_extension
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void BtnTransferProfile(object sender, RoutedEventArgs e)
+        private void BtnTransferProfile(object sender, RoutedEventArgs e)
         {
-            if (listServoProfiles.SelectedValue != null)
-            {
-                Log("Transfer Profile: " + listServoProfiles.SelectedValue);
+            TransferProfile(false);
+            ReloadParameterDataOfSelectedServos();
+        }
 
-                Array servosArray = listBoxProfileServos.SelectedItems.Cast<int>().ToArray();
-                var selectedProfile = _profileFilesAvailable[listServoProfiles.SelectedValue.ToString()];
-
-                ModBusExtensionControlGuiElement.IsEnabled = false;
-                await Task.Run(() => TransferProfile(selectedProfile, servosArray));
-                await Task.Run(() => SavePermanent(servosArray));
-            ModBusExtensionControlGuiElement.IsEnabled = true;
-            }
-            else
+        /// <summary>
+        /// Eventhandler for click on transfer and save profile permanently
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnTransferProfilePermanently(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult messageBoxResult = MessageBox.Show("Do you really want to save the profile to selected servos?", "Permanent save", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (messageBoxResult == MessageBoxResult.Yes)
             {
-                Log("Error: no profile selected");
+                TransferProfile(true);
+                ReloadParameterDataOfSelectedServos();
             }
         }
 
@@ -750,12 +841,28 @@ namespace sfx_100_modbus_sfb_extension
         /// <param name="e"></param>
         private async void btnSavePermanent_Click(object sender, RoutedEventArgs e)
         {
-            Array servosArray = listBoxManipulationServos.SelectedItems.Cast<int>().ToArray();
-            ModBusExtensionControlGuiElement.IsEnabled = false;
-            await Task.Run((() => SavePermanent(servosArray)));
-            ModBusExtensionControlGuiElement.IsEnabled = true;
+            MessageBoxResult messageBoxResult = MessageBox.Show("Do you really want to save current values to selected servos?", "Permanent save", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (messageBoxResult == MessageBoxResult.Yes)
+            {
+                TransferProfile(true);
+                Array servosArray = listBoxManipulationServos.SelectedItems.Cast<int>().ToArray();
+                ModBusExtensionControlGuiElement.IsEnabled = false;
+                await Task.Run((() => SavePermanent(servosArray)));
+                ModBusExtensionControlGuiElement.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Enable save as profile box when servo is selected
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CmbBoxBackupServo_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            btnSaveAsProfile.IsEnabled = Convert.ToInt32(cmbBoxBackupServo.SelectedValue) >= 1;
         }
 
         #endregion
+
     }
 }

@@ -57,6 +57,7 @@
     <Compile Include="..\sfx-100-modbus-gui\StringWriterWithEncoding.cs">
       <Link>StringWriterWithEncoding.cs</Link>
     </Compile>
+    <Compile Include="BooleanAndConverter.cs" />
     <Compile Include="ModBusExtension.cs" />
     <Compile Include="ModBusExtensionControl.cs">
       <SubType>UserControl</SubType>

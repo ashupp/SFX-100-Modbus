@@ -118,5 +118,17 @@ namespace sfx_100_modbus_sfb_extension.Properties {
                 this["comOptionsAutoConnectOnStartup"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string profilesPath {
+            get {
+                return ((string)(this["profilesPath"]));
+            }
+            set {
+                this["profilesPath"] = value;
+            }
+        }
     }
 }

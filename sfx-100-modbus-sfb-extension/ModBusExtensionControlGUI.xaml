@@ -8,13 +8,15 @@
              Unloaded="ModBusExtensionControlGUI_OnUnloaded"
              Loaded="ModBusExtensionControlGUI_OnLoaded"
              x:Name="ModBusExtensionControlGuiElement"
-             mc:Ignorable="d" Height="711.445" Width="1180.643" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+             mc:Ignorable="d" Height="711.445" Width="1226.643" Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+    <UserControl.Resources>
+        <local:BooleanAndConverter x:Key="BooleanAndConverter" />
+    </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="107*"/>
-            <ColumnDefinition Width="121*"/>
+            <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <GroupBox Header="Connection" HorizontalAlignment="Left" Height="91" Margin="10,67,0,0" VerticalAlignment="Top" Width="380">
+        <GroupBox Header="Connection" HorizontalAlignment="Left" Height="91" Margin="10,67,0,0" VerticalAlignment="Top" Width="397">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="4*"/>
@@ -36,7 +38,7 @@
                 <Button x:Name="comPortsRefresh" Content="🗘" HorizontalAlignment="Left" Margin="105,12,0,0" VerticalAlignment="Top" Width="25" Height="22" Click="ComPortsRefresh_OnClick" Grid.Column="1" Grid.RowSpan="2"/>
             </Grid>
         </GroupBox>
-        <GroupBox x:Name="grpBackup" Header="Backup existing profile" HorizontalAlignment="Left" Height="113" Margin="10,163,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
+        <GroupBox x:Name="grpBackup" Header="Save current parameters as profile" HorizontalAlignment="Left" Height="113" Margin="10,163,0,0" VerticalAlignment="Top" Width="397" IsEnabled="False">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="16*"/>
@@ -47,15 +49,18 @@
                     <RowDefinition Height="16"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
-                <Button Content="Backup as profile" HorizontalAlignment="Left" Margin="10,47,0,0" VerticalAlignment="Top" Width="151" Height="22" Click="BtnBackupAsProfile" Grid.Row="1" Grid.ColumnSpan="2"/>
-                <Label Grid.ColumnSpan="3" Content="Choose servo for profile backup" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="189" Grid.RowSpan="2"/>
-                <ComboBox x:Name="cmbBoxBackupServo" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="151" Grid.ColumnSpan="2" Grid.Row="1"/>
+                <Button x:Name="btnSaveAsProfile" IsEnabled="False" Content="Save as profile" HorizontalAlignment="Left" Margin="10,47,0,0" VerticalAlignment="Top" Width="100" Height="22" Click="BtnBackupAsProfile" Grid.Row="1" Grid.ColumnSpan="2"></Button>
+                <Label Grid.ColumnSpan="2" Content="Source servo:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="100" Grid.RowSpan="2"/>
+                <ComboBox x:Name="cmbBoxBackupServo" IsReadOnly="True" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="100" Grid.ColumnSpan="2" Grid.Row="1" SelectionChanged="CmbBoxBackupServo_OnSelectionChanged">
+                </ComboBox>
+                <TextBox BorderThickness="0" Grid.ColumnSpan="2" Grid.Column="1" HorizontalAlignment="Left" Margin="68,15,0,0" TextWrapping="Wrap" Text="Saves current parameters to a profile.
+                           Please note: Temporary edited parameters are saved to the profile as well." VerticalAlignment="Top" Width="240" Height="65" Grid.RowSpan="2"/>
             </Grid>
         </GroupBox>
-        <GroupBox Header="Debug Messages" HorizontalAlignment="Left" Height="173" Margin="395,516,0,0" VerticalAlignment="Top" Width="776" Grid.ColumnSpan="2">
+        <GroupBox Header="Debug Messages" HorizontalAlignment="Left" Height="173" Margin="412,516,0,0" VerticalAlignment="Top" Width="805">
             <ListBox x:Name="debugBox" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         </GroupBox>
-        <GroupBox x:Name="grpTransfer" Header="Transfer profiles to servos" HorizontalAlignment="Left" Height="408" Margin="10,281,0,0" VerticalAlignment="Top" Width="380" IsEnabled="False">
+        <GroupBox x:Name="grpTransfer" Header="Transfer profiles to servos" HorizontalAlignment="Left" Height="408" Margin="10,281,0,0" VerticalAlignment="Top" Width="397" IsEnabled="False">
             <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="4*"/>
@@ -66,11 +71,18 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
 
-                <Button Content="Transfer profile" HorizontalAlignment="Left" Margin="102,200,0,0" VerticalAlignment="Top" Width="192" Height="22" Click="BtnTransferProfile" Grid.Row="1" Grid.Column="1"/>
-                <Label Grid.ColumnSpan="2" Content="Choose servos for profile:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="151" Grid.RowSpan="2"/>
-                <ListBox x:Name="listBoxProfileServos" Margin="10,25,207,0"
+                <Button Content="Transfer and Save permanently" HorizontalAlignment="Left" Margin="51,271,0,0" VerticalAlignment="Top" Width="257" Height="22" Click="BtnTransferProfilePermanently" Grid.Row="1" Grid.Column="1">
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{StaticResource BooleanAndConverter}">
+                            <Binding ElementName="listBoxProfileServos" Path="SelectedItems.Count" />
+                            <Binding ElementName="listServoProfiles" Path="SelectedItems.Count"/>
+                        </MultiBinding>
+                    </Button.IsEnabled>
+                </Button>
+                <Label Grid.ColumnSpan="2" Content="Choose servos:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="100" Grid.RowSpan="2" RenderTransformOrigin="0.53,-0.154"/>
+                <ListBox x:Name="listBoxProfileServos" Margin="10,25,275,0"
                     VerticalAlignment="Top"
-                    SelectionMode="Multiple" Grid.Row="1" Height="170" Grid.ColumnSpan="2">
+                    SelectionMode="Multiple" Grid.Row="1" Height="130" Grid.ColumnSpan="2">
                     <ListBox.Resources>
                         <Style TargetType="{x:Type ListBoxItem}">
                             <Setter Property="OverridesDefaultStyle" Value="true" />
@@ -88,20 +100,29 @@
                         </Style>
                     </ListBox.Resources>
                 </ListBox>
-                <Label Content="Choose profile:" HorizontalAlignment="Left" Margin="102,10,0,0" VerticalAlignment="Top" Width="92" Grid.RowSpan="2" Grid.Column="1"/>
-                <ListBox x:Name="listServoProfiles" HorizontalAlignment="Left" Height="170" Margin="102,25,0,0" Grid.Row="1" VerticalAlignment="Top" Width="192" Grid.Column="1"/>
-                <Button Content="&#128472;" HorizontalAlignment="Left" Margin="269,14,0,0" VerticalAlignment="Top" Width="25" Height="22" Click="BtnProfilesRefresh" Grid.Column="1" Grid.RowSpan="2"/>
-                <TextBox BorderThickness="0" HorizontalAlignment="Left" Height="55" Margin="10,241,0,0" Grid.Row="1" TextWrapping="Wrap" Text="ATTENTION: For first use please transfer the &quot;SFX-100-Reduced-Speed&quot; profile before switching to &quot;SFX-100-Default&quot; when everything works fine." VerticalAlignment="Top" Width="348" Grid.ColumnSpan="2"/>
+                <Label Content="Choose profile:" HorizontalAlignment="Left" Margin="51,10,0,0" VerticalAlignment="Top" Width="102" Grid.RowSpan="2" Grid.Column="1"/>
+                <ListBox x:Name="listServoProfiles" HorizontalAlignment="Left" Height="214" Margin="51,25,0,0" Grid.Row="1" VerticalAlignment="Top" Width="257" Grid.Column="1"/>
+                <Button ToolTip="Refresh list" Content="&#128472;" HorizontalAlignment="Left" Margin="283,14,0,0" VerticalAlignment="Top" Width="25" Height="22" Click="BtnProfilesRefresh" Grid.Column="1" Grid.RowSpan="2" RenderTransformOrigin="1.24,0.5"/>
+                <TextBox BorderThickness="0" HorizontalAlignment="Left" Height="55" Margin="10,304,0,0" Grid.Row="1" TextWrapping="Wrap" Text="ATTENTION: For first use please transfer and permanently save the &quot;SFX-100-Reduced-Speed&quot; profile before switching to &quot;SFX-100-Default&quot; when everything works fine." VerticalAlignment="Top" Width="348" Grid.ColumnSpan="2"/>
+                <Button Content="Transfer" HorizontalAlignment="Left" Margin="51,244,0,0" VerticalAlignment="Top" Width="257" Height="22" Click="BtnTransferProfile" Grid.Row="1" Grid.Column="1" RenderTransformOrigin="0.65,0.545">
+                    <Button.IsEnabled>
+                        <MultiBinding Converter="{StaticResource BooleanAndConverter}">
+                            <Binding ElementName="listBoxProfileServos" Path="SelectedItems.Count" />
+                            <Binding ElementName="listServoProfiles" Path="SelectedItems.Count"/>
+                        </MultiBinding>
+                    </Button.IsEnabled>
+                </Button>
+                <Button Content="&#128193;" ToolTip="Change profiles folder" HorizontalAlignment="Left" Margin="253,14,0,0" VerticalAlignment="Top" Width="25" Height="22" Click="BtnSetFolder" Grid.Column="1" Grid.RowSpan="2" RenderTransformOrigin="1.24,0.5"/>
             </Grid>
         </GroupBox>
         <Label x:Name="modBusExtensionTitle" Content="ModBus Extension" HorizontalAlignment="Left" Margin="10,0,0,0" VerticalAlignment="Top" FontSize="24"/>
-        <GroupBox x:Name="grpLiveDataManipulation" Header="Live Data Manipulation" HorizontalAlignment="Left" Height="444" Margin="395,67,0,0" VerticalAlignment="Top" Width="776" Grid.ColumnSpan="2">
+        <GroupBox x:Name="grpLiveDataManipulation" IsEnabled="False" Header="Edit Parameters" HorizontalAlignment="Left" Height="444" Margin="412,67,0,0" VerticalAlignment="Top" Width="805">
 
-            <Grid>
+            <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
                 <ListBox x:Name="listBoxManipulationServos" Margin="10,31,0,0"
                          VerticalAlignment="Top"
-                         SelectionMode="Multiple" Height="170"
-                         SelectionChanged="ListBoxManipulationServos_OnSelectionChanged" HorizontalAlignment="Left" Width="151"
+                         SelectionMode="Multiple" Height="130"
+                         SelectionChanged="ListBoxManipulationServos_OnSelectionChanged" HorizontalAlignment="Left" Width="158"
                 >
                     <ListBox.Resources>
                         <Style TargetType="{x:Type ListBoxItem}">
@@ -127,11 +148,12 @@
                     </ScrollViewer>
                 </Border>
                 <Label Content="Parameters:" HorizontalAlignment="Left" Margin="176,5,0,0" VerticalAlignment="Top" Width="180"/>
-                <Button x:Name="btnSavePermanent" Content="Save permanent" HorizontalAlignment="Left" Margin="10,387,0,0" VerticalAlignment="Top" Width="151" Height="24" Click="btnSavePermanent_Click"/>
-                <TextBlock HorizontalAlignment="Left" Margin="10,233,0,0" TextWrapping="Wrap" Text="Attention: 
-                           The parameters will be reverted after power-cycle of the servo. Hit the button below to write the data to servo driver memory. 
-                           Try not to save often as EEPROM-Memory wears out." VerticalAlignment="Top" Height="149" Width="151"/>
-                <Button Content="🗘" HorizontalAlignment="Left" Margin="729,5,0,0" VerticalAlignment="Top" Width="25" Height="22" Click="BtnParametersRefresh"/>
+                <Button IsEnabled="{Binding ElementName=listBoxManipulationServos, Path=SelectedItems.Count}" x:Name="btnSavePermanent" Content="Save permanently" HorizontalAlignment="Left" Margin="10,387,0,0" VerticalAlignment="Top" Width="158" Height="24" Click="btnSavePermanent_Click"/>
+                <TextBox BorderThickness="0" HorizontalAlignment="Left" Margin="10,236,0,0" TextWrapping="Wrap" Text="Attention: 
+                           All parameters will be reverted after power-cycle of the servo. Hit the button below to write the data to servo driver memory. 
+                           Try not to save often as EEPROM-Memory wears out." VerticalAlignment="Top" Height="146" Width="158"/>
+                <Button ToolTip="Refresh Parameters" Content="🗘" HorizontalAlignment="Left" Margin="758,4,0,0" VerticalAlignment="Top" Width="25" Height="22" Click="BtnParametersRefresh" RenderTransformOrigin="0.68,0.273"/>
+
             </Grid>
         </GroupBox>
         <TextBlock HorizontalAlignment="Left" Margin="10,42,0,0" VerticalAlignment="Top"><Hyperlink NavigateUri="https://github.com/ashupp/SFX-100-Modbus" RequestNavigate="Hyperlink_OnRequestNavigate" ><Run Text="https://github.com/ashupp/SFX-100-Modbus"/></Hyperlink></TextBlock>
