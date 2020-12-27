@@ -1,10 +1,10 @@
 # SFX-100-Modbus
 GUI and Library to manage profiles for servo drivers used in SFX-100 actuators.
 
+Available as Standalone Application or Simfeedback Extension.  
+
 Please support this great project.  
 https://opensfx.com
-
-This tool is based on the research and proof of concept by SimFeedBack community member Dsl71.
 
 ![SFB-Extension](doc/img/sfb-extension.jpg?raw=true|width=100px)
 
@@ -91,6 +91,8 @@ Since it is a bus system all servo drives can be connected at the same time to t
 ### Step 4 - Launch the app
 Even though the app is pretty much self-explanatory - details will follow.
 
-# Third party Libraries
+# Third party Libraries and Thanks  
 This library uses the EasyModbus Client library  
 https://sourceforge.net/projects/easymodbustcp/
+
+This tool is based on the research and proof of concept by SimFeedBack community member Dsl71.
