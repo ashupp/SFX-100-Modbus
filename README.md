@@ -6,8 +6,6 @@ https://opensfx.com
 
 This tool is based on the research and proof of concept by SimFeedBack community member Dsl71.
 
-Right now this is also more a proof of concept than a usable application.
-
 ![SFB-Extension](doc/img/sfb-extension.jpg?raw=true|width=100px)
 
 ![SFB-Standalone](doc/img/modbus-standalone.jpg?raw=true|width=100px)
@@ -17,8 +15,6 @@ You could make your actuators unsusable, unaccessible or maybe even brick or dam
 
 The changes written by this tool affects the servo driver and its performance directly.
 When wrong parameters are written it will result in unexpected behaviour of the drives. You may even get injured. 
-
-I am not recommending to use this tool at the current stage of development unless you are know exactly what you are doing.
 
 No checks or rollbacks are provided to ensure the correctness of the profiles being read or written.
 
