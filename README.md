@@ -23,7 +23,8 @@ We are not responsible of any damages caused by usage of this application!
 **You have been warned!**
 
 # Installation  
-Do not click on Download on this page. Download the file from the releases page!
+Do not click on the green Download button on this page. This would download the sources only.  
+Download the files from the releases page instead or by clicking links below.      
 https://github.com/ashupp/SFX-100-Modbus/releases
 
 [Download latest Simfeedback Modbus Extension Here](https://github.com/ashupp/SFX-100-Modbus/releases/latest/download/ModBusExtension.zip)  
