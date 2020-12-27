@@ -12,7 +12,7 @@ using System.Windows;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("ashnet GmbH")]
 [assembly: AssemblyProduct("sfx-100-modbus-gui")]
-[assembly: AssemblyCopyright("Copyright ©  ashnet GmbH 2019")]
+[assembly: AssemblyCopyright("Copyright ©  ashnet GmbH 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -51,5 +51,5 @@ using System.Windows;
 // Sie können alle Werte angeben oder Standardwerte für die Build- und Revisionsnummern verwenden,
 // indem Sie "*" wie unten gezeigt eingeben:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.0.1.6")]
-[assembly: AssemblyFileVersion("0.0.1.6")]
+[assembly: AssemblyVersion("0.0.1.7")]
+[assembly: AssemblyFileVersion("0.0.1.7")]
