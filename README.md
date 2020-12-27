@@ -8,7 +8,9 @@ This tool is based on the research and proof of concept by SimFeedBack community
 
 Right now this is also more a proof of concept than a usable application.
 
-![Prototype wiring](doc/img/sfb-extension.jpg?raw=true|width=100px)
+![SFB-Extension](doc/img/sfb-extension.jpg?raw=true|width=100px)
+
+![SFB-Standalone](doc/img/modbus-standalone.jpg?raw=true|width=100px)
 
 # Warning
 You could make your actuators unsusable, unaccessible or maybe even brick or damage them irreversible.
@@ -23,6 +25,13 @@ No checks or rollbacks are provided to ensure the correctness of the profiles be
 We are not responsible of any damages caused by usage of this application!
 
 **You have been warned!**
+
+# Installation  
+Do not click on Download on this page. Download the file from the releases page!
+https://github.com/ashupp/SFX-100-Modbus/releases
+
+[Download latest Simfeedback Modbus Extension Here](https://github.com/ashupp/SFX-100-Modbus/releases/latest/download/ModBusExtension.zip)  
+[Download latest Standalone Modbus Tool Here](https://github.com/ashupp/SFX-100-Modbus/releases/latest/download/sfx-100-modbus-gui.zip) 
 
 # Requirements
 
