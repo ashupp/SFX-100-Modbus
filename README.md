@@ -36,7 +36,6 @@ https://github.com/ashupp/SFX-100-Modbus/releases
 First of all you need the modbus enabled servo drives of the 90ST-M02430 set.
 
 To connect the drives you need a USB to 485 adapter/USB to Modbus adapter.
-*Note: Right now we are supporting USB adapters. In the future we may support an Modbus over ethernet solution*
   
 There are plenty of adapters out there. Each of the following adapters have been checked and are working great.
 
@@ -90,6 +89,12 @@ Since it is a bus system all servo drives can be connected at the same time to t
 
 ### Step 4 - Launch the app
 Even though the app is pretty much self-explanatory - details will follow.
+
+### Step 5 (Optional - Advanced) - Extending the XML Files
+You can edit the sfx-100-parameters.xml for your needs.  
+More and custom parameters can be added. Just have a look at the existing parameters with its values (especially min/max/default).  
+This is only for advanced use because you could brick your adapters with wrong settings and even injure yourself.  
+So please take care.
 
 # Third party Libraries and Thanks  
 This library uses the EasyModbus Client library  
